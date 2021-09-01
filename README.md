@@ -1,4 +1,4 @@
-Khóa Luận Tốt Nghiệp (CLC)
+Tiểu luận chuyên ngành (CLC)
 <br/>Đề tài: Xây Dựng Website Online Meeting
 <br/>Thành Viên Nhóm:
 + Trần Hữu Hào - 18110103
