@@ -1,0 +1,64 @@
+@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Quicksand", sans-serif;
+}
+
+.blink {
+  animation: blink 0.85s step-end infinite;
+  -webkit-animation: blink 0.85s step-end infinite;
+}
+@keyframes blink {
+  from,
+  to {
+    visibility: hidden;
+  }
+  50% {
+    visibility: visible;
+  }
+}
+
+.flex-center {
+  @apply flex justify-center items-center;
+}
+
+* {
+  @apply focus:outline-none;
+}
+
+.scrollbar1::-webkit-scrollbar {
+  width: 8px;
+  background-color: transparent;
+}
+
+.scrollbar1::-webkit-scrollbar-track {
+  margin: 0 30px;
+}
+
+.scrollbar1::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: rgb(206, 210, 219);
+}
+
+.arrow,
+.arrow::before {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: inherit;
+  border-radius: 0 0 4px 0;
+}
+
+.arrow {
+  visibility: hidden;
+}
+
+.arrow::before {
+  visibility: visible;
+  content: "";
+  transform: rotate(45deg);
+}
