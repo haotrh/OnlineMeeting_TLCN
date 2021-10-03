@@ -26,6 +26,7 @@ db.sequelize = sequelize;
 
 db.user = require("../models/user.model.js")(sequelize, Sequelize);
 db.role = require("../models/role.model.js")(sequelize, Sequelize);
+db.room = require("../models/room.model.js")(sequelize, Sequelize);
 
 // Indicate that the user model can belong to many Roles and vice versa
 // With through, foreignKey, otherKey, 
@@ -40,6 +41,19 @@ db.user.belongsToMany(db.role, {
   through: "user_roles",
   foreignKey: "userId",
   otherKey: "roleId"
+});
+
+db.room.belongsToMany(db.user, {
+  through: "user_rooms",
+  foreignKey: "roomId",
+  otherKey: "userId",
+  onDelete: 'cascade'
+});
+db.user.belongsToMany(db.room, {
+  through: "user_rooms",
+  foreignKey: "userId",
+  otherKey: "roomId",
+  onDelete: 'cascade'
 });
 
 db.ROLES = ["user", "admin", "moderator"];

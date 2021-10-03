@@ -50,10 +50,11 @@ function initial() {
 // routes
 require('./routes/auth.routes')(app);
 require('./routes/user.routes')(app);
+require('./routes/room.routes')(app);
 
 // simple route
 app.get("/", (req, res) => {
-  res.json({ message: "online meeting" });
+  res.json({ message: "Online meeting!" });
 });
 
 // set port, listen for requests
