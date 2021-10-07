@@ -1,4 +1,5 @@
 const controller = require("../controllers/room.controller");
+const { verifyRoom, authJwt } = require("../middleware");
 
 module.exports = function(app) {
   app.use(function(req, res, next) {
@@ -11,17 +12,29 @@ module.exports = function(app) {
 
   app.post(
     "/api/room/create",
+    [
+      authJwt.verifyToken,
+      verifyRoom.checkRoomPassword
+    ],
     controller.create
   );
   
   app.post(
     "/api/room/delete",
+    [
+      authJwt.verifyToken,
+      verifyRoom.checkRoomPassword
+    ],
     controller.delete
   );
 
 
   app.post(
     "/api/room/join",
+    [
+      authJwt.verifyToken,
+      verifyRoom.checkRoomPassword
+    ],
     controller.join
   );
 

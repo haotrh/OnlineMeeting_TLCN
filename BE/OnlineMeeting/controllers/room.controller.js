@@ -4,10 +4,39 @@ const User = db.user;
 
 // const Op = db.Sequelize.Op;
 
-exports.create = (req, res) => {
+const makeUniqueCode = async() => {
+  let roomCode  = await makeRandomCode()
+  let count = await Room.count({ where: { code: roomCode } })
+  while (count != 0) {
+    roomCode = await makeRandomCode()
+    count = await Room.count({ where: { code: roomCode } })
+  }
+
+  return roomCode
+}
+
+const makeRandomCode = () => {
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const charactersLength = characters.length;
+        var firstString  = '';
+        var secondString = '';
+        for ( let i = 0; i < 5; i++ ) {
+          firstString += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        for ( let i = 0; i < 5; i++ ) {
+          secondString += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+
+        return (firstString + '-' + secondString)
+        // console.log(`${firstString}-${secondString}`)
+     }
+
+exports.create = async(req, res) => {
   // Save Room to Database
   Room.create({
-    host: req.body.username
+    host: req.body.username,
+    code: await makeUniqueCode(),
+    password: req.body.password
   })
     .then(room => {
           res.send({ message: "Room was created successfully!", data: room});
@@ -21,7 +50,7 @@ exports.delete = (req, res) => {
     // Save Room to Database
     Room.destroy({
         where: {
-            id: req.body.roomId
+            code: req.body.code
         }
     })
       .then(room => {
@@ -45,7 +74,7 @@ exports.join = (req, res) => {
 
         Room.findOne({
             where: {
-              id: req.body.roomId
+              code: req.body.code
             }
           })
           .then(room => {
@@ -79,7 +108,7 @@ User.findOne({
 
     Room.findOne({
         where: {
-            id: req.body.roomId
+            code: req.body.code
         }
         })
         .then(room => {
