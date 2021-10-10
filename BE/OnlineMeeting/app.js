@@ -6,6 +6,16 @@ const { role, sequelize } = require("./models/index");
 
 const app = express();
 
+const https = require("httpolyglot")
+const fs = require("fs")
+const path = require("path")
+const { Server } = require("socket.io")
+const mediasoup = require('mediasoup')
+
+// set port, listen for requests
+const PORT = process.env.PORT || 8080;
+const _dirname = path.resolve()
+
 var corsOptions = {
   origin: "http://localhost:8081"
 };
@@ -57,8 +67,45 @@ app.get("/", (req, res) => {
   res.json({ message: "Online meeting!" });
 });
 
-// set port, listen for requests
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
-});
+app.use('/sfu', express.static(path.join(_dirname, './server/public')))
+
+const options = {
+  key: fs.readFileSync('./server/ssl/key.pem', 'utf-8'),
+  cert: fs.readFileSync('./server/ssl/cert.pem', 'utf-8')
+}
+
+const httpsServer = https.createServer(options, app)
+httpsServer.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}s.`)
+})
+
+const io = new Server(httpsServer)
+
+const peers = io.of('/mediasoup')
+
+peers.on('connection', socket => {
+  console.log(socket.id)
+  socket.emit('connection-success', { 
+    socketId : socket.id 
+  })
+})
+
+let worker
+
+const createWorker = async() => {
+  worker = await mediasoup.createWorker({
+    rtcMinPort: 2000,
+    rtcMaxPort: 2020
+  })
+
+  console.log(`Worker PID: ${worker.pid}`)
+
+  worker.on('died', error => {
+    console.log('Worker died')
+    setTimeout(() => process.exit(1), 5000)
+  })
+
+  return worker
+}
+
+worker = createWorker()

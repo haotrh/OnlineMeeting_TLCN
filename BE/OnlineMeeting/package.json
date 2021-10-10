@@ -2,9 +2,11 @@
   "name": "OnlineMeeting",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js",
+    "watch": "watchify server/public/media.controller.js -o server/public/index.js -v"
   },
   "keywords": [],
   "author": "",
@@ -14,9 +16,17 @@
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
+    "httpolyglot": "^0.1.2",
     "jsonwebtoken": "^8.5.1",
+    "mediasoup": "^3.8.4",
+    "mediasoup-client": "^3.6.43",
     "pg": "^8.7.1",
     "pg-hstore": "^2.3.4",
-    "sequelize": "^6.6.5"
+    "sequelize": "^6.6.5",
+    "socket.io": "^4.2.0",
+    "socket.io-client": "^4.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.13"
   }
 }
