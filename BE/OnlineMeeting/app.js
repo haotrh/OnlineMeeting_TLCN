@@ -16,11 +16,21 @@ const mediasoup = require('mediasoup')
 const PORT = process.env.PORT || 8080;
 const _dirname = path.resolve()
 
-var corsOptions = {
-  origin: "http://localhost:8081"
-};
+// var corsOptions = {
+//   origin: "http://localhost:8081"
+// };
+var allowlist = ['http://localhost:8081', 'http://localhost:3000']
+var corsOptionsDelegate = function (req, callback) {
+  var corsOptions;
+  if (allowlist.indexOf(req.header('Origin')) !== -1) {
+    corsOptions = { origin: true } // reflect (enable) the requested origin in the CORS response
+  } else {
+    corsOptions = { origin: false } // disable CORS for this request
+  }
+  callback(null, corsOptions) // callback expects two parameters: error and options
+}
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
 
 // parse requests of content-type - application/json
 // app.use(bodyParser.json());
@@ -67,7 +77,7 @@ app.get("/", (req, res) => {
   res.json({ message: "Online meeting!" });
 });
 
-app.use('/sfu', express.static(path.join(_dirname, './server/public')))
+app.use('/sfu/', express.static(path.join(_dirname, './server/public')))
 
 const options = {
   key: fs.readFileSync('./server/ssl/key.pem', 'utf-8'),
