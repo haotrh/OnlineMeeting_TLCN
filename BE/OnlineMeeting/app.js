@@ -79,10 +79,17 @@ require('./routes/auth.routes')(app);
 require('./routes/user.routes')(app);
 require('./routes/room.routes')(app);
 require('./routes/chat.routes')(app);
+require('./routes/verifycode.routes')(app);
 
 // simple route
 app.get("/", (req, res) => {
-  res.json({ message: "Online meeting!" });
+  const date = new Date('2021-10-17T10:42:13.331Z')
+  const newer = date.getTime() + (60*60*1000)
+  const date2 = new Date(newer)
+  const now = Date.now()
+  if(now > date2)
+  res.send({ message: "Online meeting: " + now })
+  res.send({ message: "Online meeting: " + date, newer: "Online meeting: " + date2 });
 });
 
 // app.get("/sfu2", (req, res) => {

@@ -57,7 +57,7 @@ exports.delete = (req, res) => {
             res.send({ message: "Room was deleted successfully!" });
       })
       .catch(err => {
-        res.status(500).send({ message: err.message, data: null });
+        res.status(500).send({ message: err.message });
       });
   };
 

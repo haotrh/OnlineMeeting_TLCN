@@ -28,6 +28,7 @@ db.user = require("../models/user.model.js")(sequelize, Sequelize);
 db.role = require("../models/role.model.js")(sequelize, Sequelize);
 db.room = require("../models/room.model.js")(sequelize, Sequelize);
 db.chat = require("../models/chat.model.js")(sequelize, Sequelize);
+db.verifycode = require("../models/verifycode.model.js")(sequelize, Sequelize);
 
 // Indicate that the user model can belong to many Roles and vice versa
 // With through, foreignKey, otherKey, 
@@ -57,7 +58,11 @@ db.user.belongsToMany(db.room, {
   onDelete: 'cascade'
 });
 
+// db.user.hasOne(db.verifycode, {
+//   foreignKey: 'userId'
+// });
+db.verifycode.belongsTo(db.user);
+
 db.ROLES = ["user", "admin", "moderator"];
-db.ROOMS = ["admin", "admin", ""];
 
 module.exports = db;
