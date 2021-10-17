@@ -1,8 +1,9 @@
 const express = require("express");
 const { json, urlencoded } = require("express");
-// import bodyParser from "body-parser";
+const bodyParser = require("body-parser");
 const cors = require("cors");
-const { role, sequelize } = require("./models/index");
+const { role, sequelize, room } = require("./models/index");
+const chat = require("./controllers/chat.controller");
 
 const app = express();
 
@@ -16,21 +17,19 @@ const mediasoup = require('mediasoup')
 const PORT = process.env.PORT || 8080;
 const _dirname = path.resolve()
 
-// var corsOptions = {
-//   origin: "http://localhost:8081"
-// };
-var allowlist = ['http://localhost:8081', 'http://localhost:3000']
-var corsOptionsDelegate = function (req, callback) {
-  var corsOptions;
-  if (allowlist.indexOf(req.header('Origin')) !== -1) {
-    corsOptions = { origin: true } // reflect (enable) the requested origin in the CORS response
-  } else {
-    corsOptions = { origin: false } // disable CORS for this request
-  }
-  callback(null, corsOptions) // callback expects two parameters: error and options
-}
+// var allowlist = ['http://localhost:8081', 'http://localhost:3000']
+// var corsOptionsDelegate = function (req, callback) {
+//   var corsOptions;
+//   if (allowlist.indexOf(req.header('Origin')) !== -1) {
+//     corsOptions = { origin: true } // reflect (enable) the requested origin in the CORS response
+//   } else {
+//     corsOptions = { origin: false } // disable CORS for this request
+//   }
+//   callback(null, corsOptions) // callback expects two parameters: error and options
+// }
 
-app.use(cors(corsOptionsDelegate));
+// app.use(cors(corsOptionsDelegate));
+app.use(cors())
 
 // parse requests of content-type - application/json
 // app.use(bodyParser.json());
@@ -42,6 +41,7 @@ app.use(urlencoded({ extended: true }));
 
 
 const Role = role;
+const Room = room;
 // force: true => drop existing tables and re-sync database
 // For production, just insert these rows manually 
 // use sync() without parameters to avoid dropping data => db.sequelize.sync();
@@ -65,31 +65,64 @@ function initial() {
       id: 3,
       name: "admin"
     });
+
+    Room.create({
+      host: "admin",
+      code: "admin",
+      password: ""
+    });
   }
+
 
 // routes
 require('./routes/auth.routes')(app);
 require('./routes/user.routes')(app);
 require('./routes/room.routes')(app);
+require('./routes/chat.routes')(app);
 
 // simple route
 app.get("/", (req, res) => {
   res.json({ message: "Online meeting!" });
 });
 
-app.use('/sfu/', express.static(path.join(_dirname, './server/public')))
+// app.get("/sfu2", (req, res) => {
+//   res.render('./server/public/index');
+// });
+
+app.use('/sfu', express.static(path.join(_dirname, './server/public/')))
+app.use('/chatio', express.static(path.join(_dirname, './server/public/chat/')))
 
 const options = {
   key: fs.readFileSync('./server/ssl/key.pem', 'utf-8'),
   cert: fs.readFileSync('./server/ssl/cert.pem', 'utf-8')
-}
+} 
 
 const httpsServer = https.createServer(options, app)
-httpsServer.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}s.`)
-})
-
+ 
 const io = new Server(httpsServer)
+
+const emitMessges = (code) => {
+  chat.loadSocketMessage(code)
+  .then((result) => io.emit("load message", result))
+  .catch(console.log);
+};
+
+io.on('connection', socket => {
+  console.log("chat connected");
+
+  socket.on("send message", message => {
+  const msg = JSON.parse(message)
+  chat.sendSocketMessage(msg)
+  .then((_) => {
+    emitMessges(msg.code);
+  })
+    .catch((err) => io.emit(err));
+  });
+
+  socket.on("disconnect", () => {
+    console.log("chat disconnected");
+  });
+});
 
 const peers = io.of('/mediasoup')
 
@@ -119,3 +152,13 @@ const createWorker = async() => {
 }
 
 worker = createWorker()
+
+
+
+
+// start server
+httpsServer.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}s.`)
+})
+
+

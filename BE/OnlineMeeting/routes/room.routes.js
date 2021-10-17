@@ -13,8 +13,7 @@ module.exports = function(app) {
   app.post(
     "/api/room/create",
     [
-      authJwt.verifyToken,
-      verifyRoom.checkRoomPassword
+      authJwt.verifyToken
     ],
     controller.create
   );

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon app.js",
-    "watch": "watchify server/public/media.controller.js -o server/public/index.js -v"
+    "watch": "watchify server/public/media.controller.js -o server/public/index.js -v",
+    "chatwatch": "watchify server/public/chat/chat.socket.js -o server/public/chat/index.js -v"
   },
   "keywords": [],
   "author": "",
