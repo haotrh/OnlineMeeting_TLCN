@@ -1,10 +1,35 @@
 @import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam:ital,wght@0,100;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,300;1,400;1,500;1,600;1,700;1,800&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: GT Walsheim Pro;
+  font-weight: 400;
+  font-style: normal;
+}
+
+:root {
+  --gray: rgb(229, 231, 235);
+}
+
 body {
+  font-family: "Lato", sans-serif;
+  color: #484f68;
+}
+
+.font-poppins {
+  font-family: "Poppins", sans-serif;
+}
+
+.font-be {
+  font-family: "Be Vietnam", sans-serif;
+}
+
+.font-quicksand {
   font-family: "Quicksand", sans-serif;
 }
 
@@ -22,12 +47,12 @@ body {
   }
 }
 
-.flex-center {
-  @apply flex justify-center items-center;
+input {
+  @apply focus:outline-none;
 }
 
-* {
-  @apply focus:outline-none;
+.flex-center {
+  @apply flex justify-center items-center;
 }
 
 .scrollbar1::-webkit-scrollbar {
@@ -61,4 +86,45 @@ body {
   visibility: visible;
   content: "";
   transform: rotate(45deg);
+}
+
+.striped-background {
+  background: linear-gradient(var(--gray), var(--gray)) calc(1 * 100% / 5),
+    linear-gradient(var(--gray), var(--gray)) calc(2 * 100% / 5),
+    linear-gradient(var(--gray), var(--gray)) calc(3 * 100% / 5),
+    linear-gradient(var(--gray), var(--gray)) calc(4 * 100% / 5),
+    linear-gradient(var(--gray), var(--gray)) calc(5 * 100% / 5);
+  background-size: 1px 100%; /* Control the width here*/
+  background-repeat: no-repeat;
+}
+
+.floating-input ~ label {
+  @apply scale-100 translate-y-0 transition-all;
+}
+
+.floating-input:focus-within ~ label,
+.floating-input:not(:placeholder-shown) ~ label {
+  @apply scale-[.825] -translate-y-5 text-indigo-600;
+}
+
+.app-background {
+  background: url("/bg-2.png") no-repeat,
+    linear-gradient(to bottom, rgb(249, 251, 255), white, rgb(244, 244, 255));
+}
+
+.app-background::before {
+  content: "";
+  position: absolute;
+  width: 400px;
+  height: 500px;
+  border-radius: 70px;
+  background-color: #eaedfc;
+  top: -150px;
+  left: -250px;
+  -webkit-filter: blur(60px);
+}
+
+.company-background {
+  background: url("/bg-3.png") no-repeat,
+    linear-gradient(to right, #f9faff, #f4f7fe, #f1f3ff);
 }

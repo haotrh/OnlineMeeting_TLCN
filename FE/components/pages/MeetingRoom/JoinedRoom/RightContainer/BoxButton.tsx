@@ -21,12 +21,12 @@ const BoxButton = ({
   return (
     <button
       onClick={onClick}
-      className={classNames(className, "font-bold", {
-        "bg-teal-600/[0.125] text-teal-600": active,
+      className={classNames(className, "font-bold border", {
+        "bg-indigo-300/30 text-indigo-500": active,
         "text-gray-500 hover:bg-gray-300/[0.5]": !active,
       })}
     >
-      <Icon className="mr-1 text-lg" /> {text}
+      <Icon className="mr-2 text-lg" /> {text}
     </button>
   );
 };

@@ -75,6 +75,7 @@ export const TextTyping = ({
       >
         &nbsp;
       </span>
+      <span className="invisible w-0">&nbsp;</span>
     </div>
   );
 };

@@ -137,8 +137,8 @@ const MessageBox = ({ hidden }: MessageBoxProps) => {
           />
           <button
             type="submit"
-            className="bg-teal-600 bg-opacity-70 hover:bg-opacity-90
-            transition-colors text-white w-[36px] h-[36px] flex-center rounded-lg"
+            className="bg-indigo-200/50 text-indigo-500 bg-opacity-70 hover:bg-opacity-90
+            transition-colors w-[36px] h-[36px] flex-center rounded-lg"
           >
             <FaTelegramPlane size={16} />
           </button>
