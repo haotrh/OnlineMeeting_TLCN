@@ -1,87 +1,69 @@
-const db = require("../models");
-const config = require("../config/auth.config");
-const User = db.user;
-const Role = db.role;
+const httpStatus = require('http-status');
+const catchAsync = require('../utils/catchAsync');
+const { authService, userService, tokenService, emailService } = require('../services');
+const bcrypt = require('bcrypt')
 
-const Op = db.Sequelize.Op;
+const register = catchAsync(async (req, res) => {
+  req.body.password = await bcrypt.hash(req.body.password, 10);
+  req.body.displayName = req.body.firstName + ' ' + req.body.lastName;
 
-var jwt = require("jsonwebtoken");
-var bcrypt = require("bcryptjs");
+  const user = await userService.createUser(req.body);
+  const tokens = await tokenService.generateAuthTokens(user);
 
-exports.signup = (req, res) => {
-  // Save User to Database
-  User.create({
-    username: req.body.username,
-    email: req.body.email,
-    password: bcrypt.hashSync(req.body.password, 8)
-  })
-    .then(user => {
-      if (req.body.roles) {
-        Role.findAll({
-          where: {
-            name: {
-              [Op.or]: req.body.roles
-            }
-          }
-        }).then(roles => {
-          user.setRoles(roles).then(() => {
-            res.send({ message: "User was registered successfully!" });
-          });
-        });
-      } else {
-        // user role = 1
-        user.setRoles([1]).then(() => {
-          res.send({ message: "User was registered successfully!" });
-        });
-      }
-    })
-    .catch(err => {
-      res.status(500).send({ message: err.message });
-    });
-};
+  res.status(httpStatus.CREATED).send({ user, tokens });
+})
 
-exports.signin = (req, res) => {
-  User.findOne({
-    where: {
-      username: req.body.username
-    }
-  })
-    .then(user => {
-      if (!user) {
-        return res.status(404).send({ message: "User Not found." });
-      }
+const login = catchAsync(async (req, res) => {
+  const { email, password } = req.body;
+  const user = await authService.loginWithEmailAndPassword(email, password);
+  const tokens = await tokenService.generateAuthTokens(user);
+  res.send({ user, tokens });
+})
 
-      var passwordIsValid = bcrypt.compareSync(
-        req.body.password,
-        user.password
-      );
+const loginWithGoogle = catchAsync(async (req, res) => {
+  const { idToken } = req.body;
+  const user = await authService.loginWithGoogle(idToken);
+  const tokens = await tokenService.generateAuthTokens(user);
+  res.send({ user, tokens });
+})
 
-      if (!passwordIsValid) {
-        return res.status(401).send({
-          accessToken: null,
-          message: "Invalid Password!"
-        });
-      }
+const loginWithFacebook = catchAsync(async (req, res) => {
+  const { accessToken } = req.body;
+  const user = await authService.loginWithFacebook(accessToken);
+  const tokens = await tokenService.generateAuthTokens(user);
+  res.send({ user, tokens });
+})
 
-      var token = jwt.sign({ id: user.id }, config.secret, {
-        expiresIn: 86400 // 24 hours
-      });
+const refreshToken = catchAsync(async (req, res) => {
+  const tokens = await authService.refreshAuth(req.body.refreshToken);
+  res.send(tokens);
+});
 
-      var authorities = [];
-      user.getRoles().then(roles => {
-        for (let i = 0; i < roles.length; i++) {
-          authorities.push("ROLE_" + roles[i].name.toUpperCase());
-        }
-        res.status(200).send({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          roles: authorities,
-          accessToken: token
-        });
-      });
-    })
-    .catch(err => {
-      res.status(500).send({ message: err.message });
-    });
-};
+const sendVerificationEmail = catchAsync(async (req, res) => {
+  const verifyEmailToken = await tokenService.generateVerifyEmailToken(req.user);
+  await emailService.sendVerificationEmail(req.user.email, verifyEmailToken);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+const verifyEmail = catchAsync(async (req, res) => {
+  await authService.verifyEmail(req.query.token);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+const forgotPassword = catchAsync(async (req, res) => {
+  const resetPasswordToken = await tokenService.generateResetPasswordToken(req.body.email);
+  await emailService.sendResetPasswordEmail(req.body.email, resetPasswordToken);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+const resetPassword = catchAsync(async (req, res) => {
+  const newPassword = await bcrypt.hash(req.body.password, 10)
+  await authService.resetPassword(req.query.token, newPassword);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+const me = catchAsync(async (req, res) => {
+  res.send(req.user)
+});
+
+module.exports = { register, login, sendVerificationEmail, verifyEmail, refreshToken, forgotPassword, resetPassword, me, loginWithGoogle, loginWithFacebook }

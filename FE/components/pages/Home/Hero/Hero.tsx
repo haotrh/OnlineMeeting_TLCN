@@ -6,7 +6,7 @@ import classNames from "classnames";
 import { socket } from "../../../../lib/socket";
 import { useRouter } from "next/dist/client/router";
 
-const Hero = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
+const Hero = () => {
   const [meetingCode, setMeetingCode] = useState("");
   const router = useRouter();
 
@@ -63,46 +63,14 @@ const Hero = ({ isAuthenticated }: { isAuthenticated: boolean }) => {
           </div>
         </div>
       </div>
-      {isAuthenticated ? (
-        <div className="flex items-center mb-3 font-poppins">
-          <button
-            onClick={handleHostMeeting}
-            className="py-3 px-5 text-[17px] font-quicksand rounded-2xl
-      from-blue-500 to-indigo-600 bg-gradient-to-r text-white font-semibold"
-          >
-            Host a meeting
-          </button>
-          <div className="mx-3">or</div>
-          <div>
-            <input
-              onChange={(e) => setMeetingCode(e.target.value)}
-              value={meetingCode}
-              placeholder="Enter meeting code"
-              className="h-full border py-3 rounded-md px-3 focus:border-blue-500 text-sm font-medium text-gray-600"
-            />
-            <button
-              className={classNames(
-                "ml-3 font-semibold text-sm transition-colors",
-                {
-                  "text-gray-400 cursor-default": !meetingCode,
-                  "text-indigo-500": meetingCode,
-                }
-              )}
-            >
-              Join
-            </button>
-          </div>
-        </div>
-      ) : (
-        <Link href="/register">
-          <a
-            className="mb-3 py-4 px-5 text-[17px] font-quicksand rounded-2xl
+      <Link href="/register">
+        <a
+          className="mb-3 py-4 px-5 text-[17px] font-quicksand rounded-2xl
         from-blue-500 to-indigo-600 bg-gradient-to-r text-white font-semibold"
-          >
-            Get started for free
-          </a>
-        </Link>
-      )}
+        >
+          Get started for free
+        </a>
+      </Link>
       <div className="my-8 shadow-2xl">
         <img
           alt="Hero Banner"

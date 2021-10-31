@@ -1,7 +1,5 @@
 import { NextPage } from "next";
 import Link from "next/link";
-import Checkbox from "../components/common/Checkbox/Checkbox";
-import FloatingInput from "../components/common/Input/FloatingInput";
 import Input from "../components/common/Input/Input";
 
 const ForgotPassword: NextPage = () => {
@@ -33,6 +31,7 @@ const ForgotPassword: NextPage = () => {
       </div>
       <div className="flex-1">
         <img
+          alt="background"
           className="w-full h-full object-contain"
           src="https://image.freepik.com/free-vector/sign-page-abstract-concept-illustration_335657-2242.jpg"
         />

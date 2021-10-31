@@ -26,7 +26,7 @@ const Popover = forwardRef<HTMLDivElement, TippyProps>(
               initial={{ opacity: 0, scale: 0.5 }}
               animate={controls}
               transition={{ duration: 0.1 }}
-              className="origin-bottom-left bg-white rounded-md shadow-md relative border border-gray-300"
+              className="origin-bottom-left relative"
             >
               <div className="relative z-10">{content}</div>
               {/* <div className="arrow shadow-medium z-0" ref={setArrow} /> */}

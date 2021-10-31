@@ -9,8 +9,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       <input
         className={classNames(
           className,
-          "py-3 px-4 font-semibold bg-gray-50 border w-full " +
-            "placeholder-indigo-500/30 border-indigo-200 focus:border-indigo-500"
+          "py-2 px-3 rounded-md border text-sm font-medium transition-colors " +
+            "focus:border-indigo-500 hover:border-gray-400/80 border-gray-300 w-full text-gray-600"
         )}
         ref={ref}
         {...props}

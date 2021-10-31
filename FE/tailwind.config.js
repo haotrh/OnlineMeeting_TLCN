@@ -15,8 +15,10 @@ module.exports = {
         gumbo: "#83A9AC",
         darkblue: "#2E446F",
         "darkblue-2": "#484F68",
+        "darkblue-3": "#34495E",
         indigo: colors.indigo,
         lightblue: "#EDF0FF",
+        "lightblue-100": "#e3e7ff",
       }
     },
   },

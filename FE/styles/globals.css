@@ -18,7 +18,7 @@
 
 body {
   font-family: "Lato", sans-serif;
-  color: #484f68;
+  color: #1C1C1E;
 }
 
 .font-poppins {
@@ -105,6 +105,11 @@ input {
 .floating-input:focus-within ~ label,
 .floating-input:not(:placeholder-shown) ~ label {
   @apply scale-[.825] -translate-y-5 text-indigo-600;
+}
+
+.floating-input:focus-within ~ label.error,
+.floating-input:not(:placeholder-shown) ~ label.error {
+  @apply text-red-500;
 }
 
 .app-background {

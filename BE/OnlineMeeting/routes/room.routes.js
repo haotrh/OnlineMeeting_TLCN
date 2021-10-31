@@ -1,44 +1,32 @@
-const controller = require("../controllers/room.controller");
-const { verifyRoom, authJwt } = require("../middleware");
+const { authJwt } = require("../middleware");
+const controller = require("../controllers/user.controller");
 
-module.exports = function(app) {
-  app.use(function(req, res, next) {
-    res.header(
-      "Access-Control-Allow-Headers",
-      "x-access-token, Origin, Content-Type, Accept"
+module.exports = function (app) {
+    app.use(function (req, res, next) {
+        res.header(
+            "Access-Control-Allow-Headers",
+            "x-access-token, Origin, Content-Type, Accept"
+        );
+        next();
+    });
+
+    app.get("/api/test/all", controller.allAccess);
+
+    app.get(
+        "/api/test/user",
+        [authJwt.verifyToken],
+        controller.userBoard
     );
-    next();
-  });
 
-  app.post(
-    "/api/room/create",
-    [
-      authJwt.verifyToken
-    ],
-    controller.create
-  );
-  
-  app.post(
-    "/api/room/delete",
-    [
-      authJwt.verifyToken,
-      verifyRoom.checkRoomPassword
-    ],
-    controller.delete
-  );
+    app.get(
+        "/api/test/mod",
+        [authJwt.verifyToken, authJwt.isModerator],
+        controller.moderatorBoard
+    );
 
-
-  app.post(
-    "/api/room/join",
-    [
-      authJwt.verifyToken,
-      verifyRoom.checkRoomPassword
-    ],
-    controller.join
-  );
-
-  app.post(
-    "/api/room/quit",
-    controller.quit
-  );
+    app.get(
+        "/api/test/admin",
+        [authJwt.verifyToken, authJwt.isAdmin],
+        controller.adminBoard
+    );
 };

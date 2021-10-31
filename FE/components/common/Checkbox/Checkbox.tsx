@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { forwardRef, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 
 interface CheckboxProps extends React.HTMLProps<HTMLInputElement> {}
 
@@ -17,10 +17,17 @@ const boxVariants = {
 };
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, placeholder, name, id, checked, onChange, ...props }, ref) => {
-    const [isChecked, setIsChecked] = useState<boolean>(checked || false);
+  (
+    { className, placeholder, name, id, defaultChecked, onChange, ...props },
+    ref
+  ) => {
+    const [isChecked, setIsChecked] = useState<boolean>(false);
     const pathLength = useMotionValue(0);
     const opacity = useTransform(pathLength, [0.05, 0.15], [0, 1]);
+
+    useEffect(() => {
+      if (defaultChecked) setIsChecked(true);
+    }, []);
 
     return (
       <motion.div
@@ -35,6 +42,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           name={id}
           type="checkbox"
           className="hidden"
+          defaultChecked={defaultChecked}
           onChange={(e) => {
             setIsChecked(e.target.checked);
             onChange && onChange(e);

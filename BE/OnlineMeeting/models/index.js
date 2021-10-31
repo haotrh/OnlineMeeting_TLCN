@@ -1,22 +1,22 @@
-const config = require("../config/db.config.js");
+const dbConfig = require("../config/db.config.js");
 
 const Sequelize = require("sequelize");
 const sequelize = new Sequelize(
-  config.DB,
-  config.USER,
-  config.PASSWORD,
+  dbConfig.DB,
+  dbConfig.USER,
+  dbConfig.PASSWORD,
   {
-    host: config.HOST,
-    dialect: config.dialect,
-    operatorsAliases: false,
+    host: dbConfig.HOST,
+    dialect: dbConfig.dialect,
+    operatorsAliases: 0,
 
     pool: {
-      max: config.pool.max,
-      min: config.pool.min,
-      acquire: config.pool.acquire,
-      idle: config.pool.idle
+      max: dbConfig.pool.max,
+      min: dbConfig.pool.min,
+      acquire: dbConfig.pool.acquire,
+      idle: dbConfig.pool.idle
     }
-  }
+  },
 );
 
 const db = {};
@@ -25,44 +25,10 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 db.user = require("../models/user.model.js")(sequelize, Sequelize);
-db.role = require("../models/role.model.js")(sequelize, Sequelize);
 db.room = require("../models/room.model.js")(sequelize, Sequelize);
-db.chat = require("../models/chat.model.js")(sequelize, Sequelize);
-db.verifycode = require("../models/verifycode.model.js")(sequelize, Sequelize);
 
-// Indicate that the user model can belong to many Roles and vice versa
-// With through, foreignKey, otherKey, 
-// we’re gonna have a new table user_roles as connection 
-// between users and roles table via their primary key as foreign keys.
-db.role.belongsToMany(db.user, {
-  through: "user_roles",
-  foreignKey: "roleId",
-  otherKey: "userId"
-});
-db.user.belongsToMany(db.role, {
-  through: "user_roles",
-  foreignKey: "userId",
-  otherKey: "roleId"
-});
-
-db.room.belongsToMany(db.user, {
-  through: "user_rooms",
-  foreignKey: "roomId",
-  otherKey: "userId",
-  onDelete: 'cascade'
-});
-db.user.belongsToMany(db.room, {
-  through: "user_rooms",
-  foreignKey: "userId",
-  otherKey: "roomId",
-  onDelete: 'cascade'
-});
-
-// db.user.hasOne(db.verifycode, {
-//   foreignKey: 'userId'
-// });
-db.verifycode.belongsTo(db.user);
-
-db.ROLES = ["user", "admin", "moderator"];
+//Associations
+db.user.hasMany(db.room, { as: 'createdRooms' });
+db.room.belongsTo(db.user, { as: 'host' });
 
 module.exports = db;

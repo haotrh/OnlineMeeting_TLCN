@@ -1,19 +1,65 @@
-module.exports = (sequelize, Sequelize) => {
-    const User = sequelize.define("users", {
-      username: {
-        type: Sequelize.STRING
+const { DataTypes } = require("sequelize");
+const { cleanModelAttributes } = require("../utils/cleanModelAttributes");
+
+module.exports = (sequelize) => {
+  const secretColumns = ['password', 'verifyCode', 'provider']
+
+  const UserModel = sequelize.define("User", {
+    firstName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    lastName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    displayName: {
+      type: DataTypes.STRING
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+    },
+    password: {
+      type: DataTypes.STRING,
+    },
+    profilePic: {
+      type: DataTypes.STRING,
+      defaultValue: ''
+    },
+    verifyCode: {
+      type: DataTypes.STRING,
+    },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    provider: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'credentials'
+    }
+  }, {
+    defaultScope: {
+      attributes: { exclude: secretColumns },
+    },
+    scopes: {
+      withSecretColumns: {
+        attributes: { include: secretColumns },
       },
-      email: {
-        type: Sequelize.STRING
+    },
+    hooks: {
+      afterCreate: (record) => {
+        cleanModelAttributes(record, secretColumns)
       },
-      password: {
-        type: Sequelize.STRING
+      afterUpdate: (record) => {
+        cleanModelAttributes(record, secretColumns)
       },
-      isVerified: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false   
-      }
-    });
-  
-    return User;
-  };
+    }
+  });
+
+  UserModel.secretColumns = secretColumns
+
+  return UserModel;
+};

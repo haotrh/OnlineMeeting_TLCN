@@ -3,7 +3,7 @@ import { motion, useSpring } from "framer-motion";
 
 const Tooltip = (props: TippyProps) => {
   const opacity = useSpring(0, {
-    duration: 120,
+    duration: 80,
   });
 
   const onMount = () => {
@@ -32,7 +32,7 @@ const Tooltip = (props: TippyProps) => {
         <motion.div
           tabIndex={-1}
           style={{ opacity }}
-          className="bg-gray-700 py-[6.5px] px-[9px] rounded-[5px] shadow-md text-[12px] font-medium leading-[12px] text-gray-50"
+          className="bg-[rgb(40,40,40)] py-2 px-3.5 rounded-lg shadow-md text-sm text-white font-poppins"
           {...attrs}
         >
           {props.content ?? content}
