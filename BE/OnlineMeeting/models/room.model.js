@@ -3,9 +3,13 @@ const { DataTypes } = require("sequelize");
 module.exports = (sequelize) => {
   const RoomModel = sequelize.define("Room", {
     id: {
-      required: true,
+      allowNull: false,
       type: DataTypes.STRING,
       primaryKey: true,
+    },
+    name: {
+      allowNull: false,
+      type: DataTypes.STRING,
     },
     allowChat: {
       type: DataTypes.BOOLEAN,

@@ -8,18 +8,18 @@ interface ParticipantBoxProps {
 }
 
 const ParticipantBox = ({ hidden }: ParticipantBoxProps) => {
-  const { roomInfo } = useContext(RoomContext);
+  const { peers } = useContext(RoomContext);
 
   return (
     <div
       className={classNames(
-        "flex-1 px-4 overflow-y-scroll space-y-3 pt-[72px] pb-3 scrollbar1",
+        "flex-1 p-4 overflow-y-scroll space-y-3 scrollbar1",
         {
           hidden,
         }
       )}
     >
-      {JSON.parse(roomInfo.peers).map((peer: any) => (
+      {peers.map((peer: any) => (
         <ParticipantInfo key={peer.id} peer={peer} />
       ))}
     </div>

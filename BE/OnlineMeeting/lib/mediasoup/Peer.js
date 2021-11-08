@@ -1,128 +1,95 @@
 module.exports = class Peer {
-  constructor(socket_id, uid, name) {
-    this.id = socket_id;
-    this.name = name;
+  constructor({ user, isHost, rtpCapabilities, socket }) {
+    this.id = socket.id;
+
+    this.name = user.displayName;
+
+    this.picture = user.profilePic;
+
+    this.isHost = isHost ?? false;
+
+    this.authId = user.id;
+
+    this.raisedHand = false;
+
+    this.raisedHandTimestamp = null;
+
     this.transports = new Map();
+
     this.consumers = new Map();
+
     this.producers = new Map();
-    this.uid = uid;
+
+    this.rtpCapabilities = rtpCapabilities;
+
+    this.socket = socket;
   }
 
   addTransport(transport) {
     this.transports.set(transport.id, transport);
   }
 
-  async connectTransport(transport_id, dtlsParameters) {
-    if (!this.transports.has(transport_id)) return;
+  async connectTransport(transportId, dtlsParameters) {
+    if (!this.transports.has(transportId)) {
+      throw new Error(`transport with id "${transportId}" not found`);
+    };
 
-    await this.transports.get(transport_id)?.connect({
+    await this.transports.get(transportId).connect({
       dtlsParameters,
     });
   }
 
-  async createProducer(
-    producerTransportId,
-    rtpParameters,
-    kind,
-  ) {
-    const producerTransport = this.transports.get(producerTransportId);
-
-    if (!producerTransport) throw "Transport not found!";
-
-    let producer = await producerTransport.produce({
-      kind,
-      rtpParameters,
-    });
-
-    this.producers.set(producer.id, producer);
-
-    producer.on("trace", (trace) => {
-      console.log(trace);
-    });
-
-    producer.on("transportclose", () => {
-      console.log("Producer transport close", {
-        name: `${this.name}`,
-        consumer_id: `${producer.id}`,
-      });
-      producer.close();
-      this.producers.delete(producer.id);
-    });
-
-    return producer;
+  getTransport(id) {
+    return this.transports.get(id)
   }
 
-  async createConsumer(
-    consumer_transport_id,
-    producer_id,
-    rtpCapabilities
-  ) {
-    let consumerTransport = this.transports.get(consumer_transport_id);
-
-    if (!consumerTransport) throw "Transport not found";
-
-    let consumer;
-
-    try {
-      consumer = await consumerTransport.consume({
-        producerId: producer_id,
-        rtpCapabilities,
-        paused: false,
-      });
-    } catch (error) {
-      console.error("Consume failed", error);
-      return;
-    }
-
-    if (consumer.type === "simulcast") {
-      await consumer.setPreferredLayers({
-        spatialLayer: 2,
-        temporalLayer: 2,
-      });
-    }
-
-    this.consumers.set(consumer.id, consumer);
-
-    consumer.on("transportclose", () => {
-      console.log("Consumer transport close", {
-        name: `${this.name}`,
-        consumer_id: `${consumer.id}`,
-      });
-      this.consumers.delete(consumer.id);
-    });
-
-    return {
-      consumer,
-      params: {
-        producerId: producer_id,
-        id: consumer.id,
-        kind: consumer.kind,
-        rtpParameters: consumer.rtpParameters,
-        type: consumer.type,
-        producerPaused: consumer.producerPaused,
-      },
-    };
+  getConsumerTransport() {
+    return [...this.transports.values()].find(transport => transport.appData.consuming);
   }
 
-  closeProducer(producer_id) {
+  addProducer(producer) {
+    this.producers.set(producer.id, producer)
+  }
+
+  getProducer(producerId) {
+    return this.producers.get(producerId);
+  }
+
+  removeProducer(producerId) {
+    this.producers.delete(producerId);
+  }
+
+  addConsumer(consumer) {
+    this.consumers.set(consumer.id, consumer)
+  }
+
+  getConsumer(consumerId) {
+    this.consumers.get(consumerId);
+  }
+
+  closeConsumer(consumerId) {
     try {
-      this.producers.get(producer_id)?.close();
+      this.consumers.get(consumerId).close();
     } catch (e) {
       console.warn(e);
     }
-
-    this.producers.delete(producer_id);
-  }
-
-  getProducer(producer_id) {
-    return this.producers.get(producer_id);
+    this.consumers.delete(consumerId);
   }
 
   close() {
     this.transports.forEach((transport) => transport.close());
   }
 
-  removeConsumer(consumer_id) {
-    this.consumers.delete(consumer_id);
+  getInfo() {
+    const peerInfo = {
+      id: this.id,
+      authId: this.authId,
+      name: this.name,
+      picture: this.picture,
+      isHost: this.isHost,
+      raisedHand: this.raisedHand,
+    }
+
+    return peerInfo
   }
 }

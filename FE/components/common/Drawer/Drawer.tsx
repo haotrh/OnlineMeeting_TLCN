@@ -30,16 +30,16 @@ const Drawer = ({
   const [animationEnd, setAnimationEnd] = useState(false);
 
   useEffect(() => {
-    const updatePageScroll = () => {
-      if (bodyRef.current) {
-        if (isOpen) {
-          bodyRef.current.style.overflow = "hidden";
-        } else {
-          bodyRef.current.style.overflow = "";
-        }
-      }
-    };
-    updatePageScroll();
+    // const updatePageScroll = () => {
+    //   if (bodyRef.current) {
+    //     if (isOpen) {
+    //       bodyRef.current.style.overflow = "hidden";
+    //     } else {
+    //       bodyRef.current.style.overflow = "";
+    //     }
+    //   }
+    // };
+    // updatePageScroll();
   }, [isOpen]);
 
   useEffect(() => {
@@ -50,13 +50,13 @@ const Drawer = ({
     if (bodyRef.current) {
       bodyRef.current.appendChild(portalRootRef.current);
       const portal = portalRootRef.current;
-      const bodyEl = bodyRef.current;
-      return () => {
-        // Clean up the portal when drawer component unmounts
-        portal.remove();
-        // Ensure scroll overflow is removed
-        bodyEl.style.overflow = "";
-      };
+      // const bodyEl = bodyRef.current;
+      // return () => {
+      //   // Clean up the portal when drawer component unmounts
+      //   // portal.remove();
+      //   // Ensure scroll overflow is removed
+      //   // bodyEl.style.overflow = "";
+      // };
     }
   }, []);
 
@@ -75,7 +75,7 @@ const Drawer = ({
                 onAnimationEnd={() => {
                   removeWhenClosed && setAnimationEnd(true);
                 }}
-                key="asdasdasd"
+                key="drawer"
                 aria-hidden={isOpen ? "false" : "true"}
                 initial={{ x: "100%" }}
                 animate={{ x: 0 }}
@@ -87,7 +87,7 @@ const Drawer = ({
                 })}
               >
                 {children}
-              </motion.div>{" "}
+              </motion.div>
               <motion.div
                 key="asdasdsacascascasd"
                 initial={{ opacity: 0 }}
@@ -108,7 +108,7 @@ const Drawer = ({
             </>
           )}
         </AnimatePresence>,
-        portalRootRef.current
+        portalRootRef.current as Element
       );
 };
 

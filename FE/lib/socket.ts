@@ -1,28 +1,11 @@
-import io, { Socket } from "socket.io-client";
-
-type RequestType =
-  | "createRoom"
-  | "join"
-  | "getRouterRtpCapabilities"
-  | "createWebRtcTransport"
-  | "connectTransport"
-  | "produce"
-  | "connectTransport"
-  | "resume"
-  | "consume"
-  | "exitRoom"
-  | "getMyRoomInfo"
-  | "getRoomInfoById";
-
-interface RoomSocket extends Socket {
-  request: (type: RequestType, data?: any) => Promise<any>;
-}
+import { io } from "socket.io-client";
+import { RequestMethod, RoomSocket } from "../types/socket.type";
 
 const socket: RoomSocket = io("http://localhost:3001/", {
   withCredentials: true,
 }) as RoomSocket;
 
-socket.request = (type: RequestType, data = {}) => {
+socket.request = (type: RequestMethod, data = {}) => {
   return new Promise((resolve, reject) => {
     socket.emit(type, data, (data: any) => {
       if (data.error) {

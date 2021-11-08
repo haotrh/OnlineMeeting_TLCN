@@ -1,23 +1,8 @@
+import Link from "next/link";
 import { FaMicrophoneSlash } from "react-icons/fa";
 import { RiComputerFill, RiPhoneFill } from "react-icons/ri";
-import Link from "next/link";
-import { useState } from "react";
-import classNames from "classnames";
-import { socket } from "../../../../lib/socket";
-import { useRouter } from "next/dist/client/router";
 
 const Hero = () => {
-  const [meetingCode, setMeetingCode] = useState("");
-  const router = useRouter();
-
-  const handleHostMeeting = () => {
-    if (socket.request) {
-      socket.request("createRoom", { room_id: "asdasd" }).then(() => {
-        router.push("asdasd");
-      });
-    }
-  };
-
   return (
     <>
       <div

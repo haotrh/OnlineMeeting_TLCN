@@ -12,42 +12,13 @@ import Popover from "../../../../common/Popover/Popover";
 import { JoinedRoomContext } from "../../../../contexts/JoinedRoomContext";
 import { MediaType } from "../JoinedRoom";
 
-interface ControlVariant extends Variants {
-  shown: Variant;
-  unshown: Variant;
-}
-
-const topVariants: ControlVariant = {
-  shown: { opacity: 1, translateY: 0 },
-  unshown: {
-    opacity: 0,
-    translateY: -200,
-    transition: {
-      delay: 0.85,
-      duration: 0.5,
-    },
-  },
-};
-
-const bottomVariants: ControlVariant = {
-  shown: { opacity: 1, translateY: 0 },
-  unshown: {
-    opacity: 0,
-    translateY: 200,
-    transition: {
-      delay: 0.85,
-      duration: 0.5,
-    },
-  },
-};
-
 const Control = ({
   videoRef,
 }: {
   videoRef: React.RefObject<HTMLVideoElement>;
 }) => {
   const [source, target] = useSingleton();
-  const { produce, device } = useContext(JoinedRoomContext);
+  const { device } = useContext(JoinedRoomContext);
 
   const [videoToggling, setVideoToggling] = useState<boolean>(false);
   const [showOption, setShowOption] = useState<boolean>(false);
@@ -62,7 +33,6 @@ const Control = ({
           deviceId = device.deviceId;
         }
       });
-      produce(type, deviceId);
     }
 
     if (type === "video") {
@@ -73,111 +43,90 @@ const Control = ({
           deviceId = device.deviceId;
         }
       });
-      produce(type, deviceId);
     }
   };
 
   return (
-    <motion.div
-      className="absolute inset-0 py-6 px-8"
-      animate={isShown ? "shown" : "unshown"}
-      onHoverStart={() => setIsShowned(true)}
-      onHoverEnd={() => setIsShowned(false)}
-      initial={false}
-    >
-      <div className="flex w-full h-full justify-between flex-col">
-        <Tooltip singleton={source} />
-        <motion.div
-          variants={topVariants}
-          className="h-[45px] rounded-2xl mt-2.5 flex justify-end space-x-3"
-        >
+    <div className="mt-3">
+      <Tooltip singleton={source} />
+      <div className="flex justify-between items-center">
+        <ControlButton
+          tooltip={{ content: "Volume", singleton: target }}
+          render={() => <BsFillVolumeDownFill size={24} />}
+          disableToggle={true}
+        />
+        <div className="flex space-x-3 items-center">
           <ControlButton
-            tooltip={{ content: "Volume", singleton: target }}
-            render={() => <BsFillVolumeDownFill size={24} />}
+            tooltip={{ content: "Camera", singleton: target }}
+            render={(on) => (on ? <IoVideocam /> : <IoVideocamOff />)}
+            preventToggle={videoToggling}
+            onClick={() => onControlClick("video")}
+            defaultState={false}
+          />
+          <ControlButton
+            onClick={() => onControlClick("audio")}
+            tooltip={{ content: "Microphone", singleton: target }}
+            render={(on) => (on ? <FaMicrophone /> : <FaMicrophoneSlash />)}
+            defaultState={false}
+          />
+          <Tooltip content="Leave the room" singleton={target}>
+            <button className="bg-red-500 text-white flex-center rounded-full text-xl p-3">
+              <RiPhoneFill />
+            </button>
+          </Tooltip>
+          <ControlButton
+            onClick={() => onControlClick("screen")}
+            tooltip={{ content: "Fullscreen", singleton: target }}
+            render={() => <MdFullscreen size={23} />}
             disableToggle={true}
           />
-        </motion.div>
-        <motion.div
-          variants={bottomVariants}
-          className="rounded-2xl flex justify-between items-center space-x-3"
-        >
           <ControlButton
-            tooltip={{ content: "Volume", singleton: target }}
-            render={() => <BsFillVolumeDownFill size={24} />}
+            tooltip={{ content: "Change layout", singleton: target }}
+            render={() => <RiLayoutMasonryFill size={20} />}
             disableToggle={true}
           />
-          <div className="flex space-x-3 h-full items-center">
+        </div>
+        <Popover
+          interactive={true}
+          visible={showOption}
+          onClickOutside={() => setShowOption(false)}
+          placement="bottom-end"
+          className="!origin-bottom-right"
+          offset={[-5, 7]}
+          content={
+            <div
+              onClick={() => setShowOption(false)}
+              className="py-2 text-[15px] font-medium min-w-[200px] bg-white text-black"
+            >
+              <div className="px-3 py-1 block hover:bg-gray-200 cursor-pointer">
+                Testing
+              </div>
+              <div className="px-3 py-1 block hover:bg-gray-200 cursor-pointer">
+                Testing
+              </div>
+              <div className="px-3 py-1 block hover:bg-gray-200 cursor-pointer">
+                Testing
+              </div>
+              <div className="px-3 py-1 block hover:bg-gray-200 cursor-pointer">
+                Testing
+              </div>
+              <div className="px-3 py-1 block hover:bg-gray-200 cursor-pointer">
+                Testing
+              </div>
+            </div>
+          }
+        >
+          <div>
             <ControlButton
-              tooltip={{ content: "Camera", singleton: target }}
-              render={(on) => (on ? <IoVideocam /> : <IoVideocamOff />)}
-              preventToggle={videoToggling}
-              onClick={() => onControlClick("video")}
-              defaultState={false}
-            />
-            <ControlButton
-              onClick={() => onControlClick("audio")}
-              tooltip={{ content: "Microphone", singleton: target }}
-              render={(on) => (on ? <FaMicrophone /> : <FaMicrophoneSlash />)}
-              defaultState={false}
-            />
-            <Tooltip content="Leave the room" singleton={target}>
-              <button className="bg-red-500 text-white flex-center rounded-full text-xl p-3">
-                <RiPhoneFill />
-              </button>
-            </Tooltip>
-            <ControlButton
-              onClick={() => onControlClick("screen")}
-              tooltip={{ content: "Fullscreen", singleton: target }}
-              render={() => <MdFullscreen size={23} />}
-              disableToggle={true}
-            />
-            <ControlButton
-              tooltip={{ content: "Change layout", singleton: target }}
-              render={() => <RiLayoutMasonryFill size={20} />}
+              onClick={() => setShowOption(!showOption)}
+              tooltip={{ content: "More options", singleton: target }}
+              render={() => <MdMoreHoriz size={23} />}
               disableToggle={true}
             />
           </div>
-          <Popover
-            interactive={true}
-            visible={showOption}
-            onClickOutside={() => setShowOption(false)}
-            placement="bottom-end"
-            offset={[3, 7]}
-            content={
-              <div
-                onClick={() => setShowOption(false)}
-                className="py-2 text-[15px] font-medium min-w-[200px]"
-              >
-                <div className="px-3 py-1 block hover:bg-gray-200 cursor-pointer">
-                  Testing
-                </div>
-                <div className="px-3 py-1 block hover:bg-gray-200 cursor-pointer">
-                  Testing
-                </div>
-                <div className="px-3 py-1 block hover:bg-gray-200 cursor-pointer">
-                  Testing
-                </div>
-                <div className="px-3 py-1 block hover:bg-gray-200 cursor-pointer">
-                  Testing
-                </div>
-                <div className="px-3 py-1 block hover:bg-gray-200 cursor-pointer">
-                  Testing
-                </div>
-              </div>
-            }
-          >
-            <div>
-              <ControlButton
-                onClick={() => setShowOption(!showOption)}
-                tooltip={{ content: "More options", singleton: target }}
-                render={() => <MdMoreHoriz size={23} />}
-                disableToggle={true}
-              />
-            </div>
-          </Popover>
-        </motion.div>
+        </Popover>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

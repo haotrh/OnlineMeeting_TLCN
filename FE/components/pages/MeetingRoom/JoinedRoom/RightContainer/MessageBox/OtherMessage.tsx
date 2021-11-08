@@ -9,7 +9,7 @@ interface OtherMessageProps {
 const OtherMessage = ({ messageInfo }: OtherMessageProps) => {
   return (
     <div className="flex max-w-full">
-      <div className="flex items-end">
+      <div className="flex pt-1">
         <div className="w-9 h-9 rounded-full ring-white ring-[2px] overflow-hidden">
           <img src={messageInfo.avatar} alt="avatar" />
         </div>
@@ -27,7 +27,7 @@ const OtherMessage = ({ messageInfo }: OtherMessageProps) => {
               >
                 <div
                   className={classNames(
-                    "bg-white shadow px-4 py-2 rounded-[14px] break-words whitespace-pre-wrap max-w-[220px]",
+                    "pr-4 py-2 break-words whitespace-pre-wrap max-w-[220px] text-gray-700",
                     {
                       "rounded-bl-none":
                         index === 0 && messageInfo.messages.length > 1,

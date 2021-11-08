@@ -12,7 +12,7 @@ interface JoinedRoomContextInterface {
   setVideoConsumers: (consumersStream: ConsumeStream[]) => any;
   audioConsumers: ConsumeStream[];
   setAudioConsumers: (consumersStream: ConsumeStream[]) => any;
-  produce: (type: MediaType, deviceId: string) => any;
+  // produce: (type: MediaType, deviceId: string) => any;
   device?: mediasoupClient.types.Device;
 }
 

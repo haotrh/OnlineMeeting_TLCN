@@ -1,11 +1,12 @@
 import { GetServerSideProps } from "next";
 import { getSession, useSession } from "next-auth/react";
-import { useState } from "react";
-import { FiPlus, FiPlusCircle } from "react-icons/fi";
-import AppDrawer from "../../components/pages/App/AppDrawer/AppDrawer";
+import { useEffect } from "react";
+import { useQuery } from "react-query";
+import { userApi } from "../../api";
 import MeetingCard from "../../components/pages/App/Meeting/MeetingCard";
 import NewMeetingButton from "../../components/pages/App/Meeting/NewMeetingButton";
 import AppLayout from "../../layouts/AppLayout";
+import { Room } from "../../types/room.type";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
@@ -19,14 +20,23 @@ const AppMeetPage = () => {
   const session = useSession();
   const user = session.data?.user;
 
+  const createdRooms = useQuery("createdRooms", () =>
+    userApi.getCreatedRooms(user.id)
+  );
+
   return (
     <AppLayout title="Meeting">
       <div className="grid grid-cols-[repeat(3,1fr)] auto-rows-[1fr] gap-5 px-10 py-4">
-        <MeetingCard user={user} name="Hoi nghi ban tron" id="sads-wew-xcs" />
-        <MeetingCard user={user} name="Hoi nghi ban tron" id="sads-wew-xcs" />
-        <MeetingCard user={user} name="Hoi nghi ban tron" id="sads-wew-xcs" />
-        <MeetingCard user={user} name="Hoi nghi ban tron" id="sads-wew-xcs" />
-        <NewMeetingButton />
+        {createdRooms.isLoading ? (
+          <div>Loading...</div>
+        ) : (
+          <>
+            {createdRooms.data.map((room: Room) => (
+              <MeetingCard key={room.id} user={user} room={room} />
+            ))}
+            <NewMeetingButton />
+          </>
+        )}
       </div>
     </AppLayout>
   );

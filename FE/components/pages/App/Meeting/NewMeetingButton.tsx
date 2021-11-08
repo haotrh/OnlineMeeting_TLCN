@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { FiPlus } from "react-icons/fi";
-import MeetingDrawer from "./MeetingDrawer";
 import NewMeetingDrawer from "./NewMeetingDrawer";
 
 const NewMeetingButton = () => {

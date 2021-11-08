@@ -1,23 +1,22 @@
-import classNames from "classnames";
-import { toPlainObject } from "lodash";
+import { motion } from "framer-motion";
 import { useContext, useState } from "react";
-import { AiFillSetting } from "react-icons/ai";
-import { BiMessageSquareDetail } from "react-icons/bi";
-import { HiUser } from "react-icons/hi";
 import { RoomContext } from "../../../../contexts/RoomContext";
 import BoxButton from "./BoxButton";
 import MessageBox from "./MessageBox/MessageBox";
 import ParticipantBox from "./ParticipantBox/ParticipantBox";
-import SettingBox from "./SettingBox/SettingBox";
+import PollBox from "./PollBox/PollBox";
+import QuestionBox from "./QuestionBox/QuestionBox";
 
 enum ContainerBoxType {
   MESSAGES,
-  PARTICIPANTS,
+  QUESTIONS,
+  POLLS,
+  PEOPLE,
   SETTINGS,
 }
 
 const RightContainer = ({ show }: { show: boolean }) => {
-  const { roomInfo } = useContext(RoomContext);
+  const { peers } = useContext(RoomContext);
 
   const [currentBox, setCurrentBox] = useState<ContainerBoxType>(
     ContainerBoxType.MESSAGES
@@ -30,38 +29,59 @@ const RightContainer = ({ show }: { show: boolean }) => {
   };
 
   return (
-    <div
-      className={classNames(
-        "bg-[#EEF2F8] rounded-2xl flex flex-col overflow-hidden relative transition-all",
-        {
-          "translate-x-0 w-[360px]": show,
-          "translate-x-[360px] w-0": !show,
-        }
-      )}
+    <motion.div
+      initial={false}
+      animate={
+        show
+          ? {
+              marginLeft: 0,
+              translateX: 0,
+            }
+          : {
+              marginLeft: -480,
+              translateX: "100%",
+            }
+      }
+      transition={{
+        ease: "easeInOut",
+        duration: 0.01,
+      }}
+      className="bg-white flex flex-col transition-all w-[480px] h-full"
     >
       <div
-        className="absolute w-full bg-[#EEF2F8] h-[60px] text-[14px] flex border-b
-      border-gray-300 bg-opacity-30 backdrop-blur-md"
+        className="bg-white text-[14px] flex border-b space-x-1.5
+      border-gray-200 bg-opacity-30 backdrop-blur-md p-4"
       >
         <BoxButton
           className="flex-1 flex-center"
           active={currentBox === ContainerBoxType.MESSAGES}
-          icon={BiMessageSquareDetail}
           onClick={() => changeBox(ContainerBoxType.MESSAGES)}
           text="Messages"
         />
         <BoxButton
           className="flex-1 flex-center"
-          active={currentBox === ContainerBoxType.PARTICIPANTS}
-          icon={HiUser}
-          onClick={() => changeBox(ContainerBoxType.PARTICIPANTS)}
-          text={`Participants (${JSON.parse(roomInfo.peers).length})`}
+          active={currentBox === ContainerBoxType.QUESTIONS}
+          onClick={() => changeBox(ContainerBoxType.QUESTIONS)}
+          text="Questions"
+        />
+        <BoxButton
+          className="flex-1 flex-center"
+          active={currentBox === ContainerBoxType.POLLS}
+          onClick={() => changeBox(ContainerBoxType.POLLS)}
+          text="Polls"
+        />
+        <BoxButton
+          className="flex-1 flex-center"
+          active={currentBox === ContainerBoxType.PEOPLE}
+          onClick={() => changeBox(ContainerBoxType.PEOPLE)}
+          text={`People (${peers.length})`}
         />
       </div>
       <MessageBox hidden={currentBox !== ContainerBoxType.MESSAGES} />
-      <ParticipantBox hidden={currentBox !== ContainerBoxType.PARTICIPANTS} />
-      {currentBox === ContainerBoxType.SETTINGS && <SettingBox />}
-    </div>
+      <QuestionBox hidden={currentBox !== ContainerBoxType.QUESTIONS} />
+      <PollBox hidden={currentBox !== ContainerBoxType.POLLS} />
+      <ParticipantBox hidden={currentBox !== ContainerBoxType.PEOPLE} />
+    </motion.div>
   );
 };
 

@@ -28,8 +28,8 @@ const Avatar = ({ className, user, children, size = 40 }: AvatarProps) => {
           style={{ fontSize: size / 2.5 }}
           className="w-full h-full text-white bg-darkblue-3 rounded-full flex-center font-semibold"
         >
-          {user.firstName.charAt(0).toUpperCase() +
-            user.lastName.charAt(0).toUpperCase()}
+          {user?.firstName?.charAt(0)?.toUpperCase() +
+            user?.lastName?.charAt(0)?.toUpperCase()}
         </div>
       )}
       {children}

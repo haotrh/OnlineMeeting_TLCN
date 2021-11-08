@@ -21,7 +21,7 @@ const MyMessage = ({ messageInfo }: MyMessageProps) => {
                 </div>
                 <div
                   className={classNames(
-                    "bg-[#D0D3E3] shadow px-3 py-2 rounded-[14px] break-words whitespace-pre-wrap max-w-[240px]",
+                    "px-3 py-2 break-words whitespace-pre-wrap max-w-[240px] text-gray-700",
                     {
                       "rounded-br-none":
                         index === 0 && messageInfo.messages.length > 1,

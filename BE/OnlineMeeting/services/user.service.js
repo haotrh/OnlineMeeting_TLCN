@@ -11,6 +11,11 @@ const createUser = async (body) => {
     return User.create(body)
 }
 
+const queryUsers = async (filter, options) => {
+    const users = await User.findAll();
+    return users;
+}
+
 const getUserByEmail = async (email, withSecret = false) => {
     if (withSecret) return User.scope('withSecretColumns').findOne({ where: { email } })
     return User.findOne({ where: { email } })
@@ -34,5 +39,5 @@ const deleteUserById = async (userId) => {
 }
 
 module.exports = {
-    createUser, getUserByEmail, getUserById, updateUserById, deleteUserById
+    createUser, getUserByEmail, getUserById, updateUserById, deleteUserById, queryUsers
 }

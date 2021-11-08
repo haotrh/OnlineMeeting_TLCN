@@ -1,32 +1,22 @@
 import classNames from "classnames";
-import { IconType } from "react-icons";
 
 interface BoxButtonProps {
   active: boolean;
-  icon: IconType;
   text: string;
   onClick: () => any;
   className?: string;
 }
 
-const BoxButton = ({
-  active,
-  icon,
-  text,
-  onClick,
-  className,
-}: BoxButtonProps) => {
-  const Icon = icon;
-
+const BoxButton = ({ active, text, onClick, className }: BoxButtonProps) => {
   return (
     <button
       onClick={onClick}
-      className={classNames(className, "font-bold border", {
+      className={classNames(className, "font-bold rounded-full py-2", {
         "bg-indigo-300/30 text-indigo-500": active,
-        "text-gray-500 hover:bg-gray-300/[0.5]": !active,
+        "text-gray-500 hover:bg-gray-300/[0.3]": !active,
       })}
     >
-      <Icon className="mr-2 text-lg" /> {text}
+      {text}
     </button>
   );
 };

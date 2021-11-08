@@ -104,29 +104,27 @@ const MessageBox = ({ hidden }: MessageBoxProps) => {
     <>
       <div
         className={classNames(
-          "flex-1 px-4 overflow-y-scroll space-y-2 pt-[72px] pb-3 scrollbar1",
+          "flex-1 p-4 overflow-y-auto space-y-2 scrollbar1",
           {
             hidden: hidden,
           }
         )}
       >
-        {messages.map((message) => {
-          return message.id === "1" ? (
-            <MyMessage messageInfo={message} />
-          ) : (
-            <OtherMessage messageInfo={message} />
-          );
-        })}
-        <div ref={endMessageRef} />
+        <div>
+          {messages.map((message) => {
+            return message.id === "1" ? (
+              <MyMessage messageInfo={message} />
+            ) : (
+              <OtherMessage messageInfo={message} />
+            );
+          })}
+          <div ref={endMessageRef} />
+        </div>
       </div>
-      <div
-        className={classNames("p-3", {
-          hidden,
-        })}
-      >
+      <div className={classNames({ hidden })}>
         <form
           onSubmit={handleSubmit}
-          className="flex bg-white p-2 rounded-2xl shadow-md"
+          className="flex bg-white p-2 border-t border-gray-200"
         >
           <input
             ref={inputRef}
@@ -137,7 +135,7 @@ const MessageBox = ({ hidden }: MessageBoxProps) => {
           />
           <button
             type="submit"
-            className="bg-indigo-200/50 text-indigo-500 bg-opacity-70 hover:bg-opacity-90
+            className="bg-indigo-200 text-indigo-500 bg-opacity-50 hover:bg-opacity-70
             transition-colors w-[36px] h-[36px] flex-center rounded-lg"
           >
             <FaTelegramPlane size={16} />

@@ -1,4 +1,5 @@
 import classNames from "classnames";
+import { ButtonHTMLAttributes, DetailedHTMLProps } from "react";
 import { ThreeDotsLoading } from "../../global/Loading/ThreeDotsLoading";
 
 export type ButtonBase =
@@ -13,6 +14,7 @@ interface ButtonProps extends React.HTMLProps<HTMLButtonElement> {
   base?: ButtonBase;
   customBaseClassName?: string;
   loading?: boolean;
+  type?: "button" | "submit" | "reset" | undefined;
 }
 
 const Button = ({
@@ -33,8 +35,8 @@ const Button = ({
   return (
     <button
       onClick={handleClick}
-      {...props}
       disabled={disabled}
+      type={type}
       className={classNames(className, {
         "py-2 px-4 rounded-md text-sm": base !== "custom",
         [`${customBaseClassName}`]: base === "custom" && !disabled,
@@ -50,6 +52,7 @@ const Button = ({
           base === "danger-outline" && !disabled,
         "bg-gray-200 cursor-not-allowed": disabled,
       })}
+      {...props}
     >
       {loading ? (
         <>

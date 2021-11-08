@@ -28,7 +28,7 @@ db.user = require("../models/user.model.js")(sequelize, Sequelize);
 db.room = require("../models/room.model.js")(sequelize, Sequelize);
 
 //Associations
-db.user.hasMany(db.room, { as: 'createdRooms' });
-db.room.belongsTo(db.user, { as: 'host' });
+db.user.hasMany(db.room, { as: 'createdRooms', foreignKey: { allowNull: false, name: "hostId" }, onDelete: 'CASCADE' });
+db.room.belongsTo(db.user, { as: 'host', foreignKey: { allowNull: false, name: "hostId" }, onDelete: 'CASCADE' });
 
 module.exports = db;

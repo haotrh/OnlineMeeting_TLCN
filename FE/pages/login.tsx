@@ -9,6 +9,7 @@ import * as yup from "yup";
 import Button from "../components/common/Button/Button";
 import Checkbox from "../components/common/Checkbox/Checkbox";
 import FloatingInput from "../components/common/Input/FloatingInput";
+import urlJoin from "url-join";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
@@ -47,6 +48,8 @@ const Login: NextPage = ({ error }: any) => {
 
   const router = useRouter();
 
+  console.log(router.query);
+
   const onSubmit = async (userData: any) => {
     if (isSubmitting) {
       return;
@@ -59,13 +62,11 @@ const Login: NextPage = ({ error }: any) => {
       redirect: false,
     });
     if (data.ok) {
-      if (userData.remember) {
-        localStorage.setItem("remember", "true");
+      if (router.query.redirect) {
+        router.push(router.query.redirect as string);
       } else {
-        localStorage.setItem("remember", "false");
-        sessionStorage.setItem("insession", "true");
+        router.push("app");
       }
-      router.push("app");
     } else {
       setError("general", { message: "Invalid email or password" });
     }
@@ -154,7 +155,12 @@ const Login: NextPage = ({ error }: any) => {
             type="button"
             onClick={() => {
               signIn("google", {
-                callbackUrl: "http://localhost:3000/profile",
+                callbackUrl: router.query.redirect
+                  ? urlJoin(
+                      "http://localhost:3000",
+                      router.query.redirect as string
+                    )
+                  : "/app",
               });
             }}
             className="flex-1 border p-2 rounded-md font-semibold flex justify-center items-center hover:bg-gray-50 transition-colors"
@@ -168,7 +174,16 @@ const Login: NextPage = ({ error }: any) => {
           </button>
           <button
             type="button"
-            onClick={() => signIn("facebook")}
+            onClick={() =>
+              signIn("facebook", {
+                callbackUrl: router.query.redirect
+                  ? urlJoin(
+                      "http://localhost:3000",
+                      router.query.redirect as string
+                    )
+                  : "/app",
+              })
+            }
             className="flex-1 border p-2 rounded-md font-semibold flex justify-center items-center hover:bg-gray-50 transition-colors"
           >
             <img
