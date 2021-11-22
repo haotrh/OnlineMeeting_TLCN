@@ -5,31 +5,29 @@ interface AvatarProps {
   size?: number;
   className?: string;
   children?: React.ReactNode;
-  user?: any;
+  src?: string;
+  name?: string;
 }
 
-const Avatar = ({ className, user, children, size = 40 }: AvatarProps) => {
-  const session = useSession();
-  user = user ?? session.data?.user;
-
+const Avatar = ({ className, src, name, children, size = 40 }: AvatarProps) => {
   return (
     <div
       className={classNames(className, "select-none relative")}
       style={{ width: size, height: size }}
     >
-      {user?.profilePic ? (
+      {src && (
         <img
           className="w-full h-full object-contain rounded-full"
-          src={user.profilePic}
+          src={src}
           alt="Avatar"
         />
-      ) : (
+      )}
+      {!src && name && (
         <div
           style={{ fontSize: size / 2.5 }}
           className="w-full h-full text-white bg-darkblue-3 rounded-full flex-center font-semibold"
         >
-          {user?.firstName?.charAt(0)?.toUpperCase() +
-            user?.lastName?.charAt(0)?.toUpperCase()}
+          {name.substring(0, 1).toLocaleUpperCase()}
         </div>
       )}
       {children}

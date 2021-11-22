@@ -123,7 +123,10 @@ const Navbar = () => {
                   onClick={() => setToggleMenu(!toggleMenu)}
                   className="cursor-pointer"
                 >
-                  <Avatar />
+                  <Avatar
+                    src={session.data?.user.profilePic}
+                    name={session.data?.user.firstName}
+                  />
                 </div>
               </Popover>
             </>

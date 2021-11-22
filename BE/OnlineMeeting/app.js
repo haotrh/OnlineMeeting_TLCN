@@ -167,6 +167,8 @@ async function runSocketServer() {
       socket
     })
 
+    room.allPeers.set(peer.id, peer)
+
     socket.roomId = roomId;
     socket.user = user;
 
@@ -183,8 +185,6 @@ async function runSocketServer() {
 
       room.removePeer(socket.id);
     })
-
-    socket.emit("init")
   });
 }
 
@@ -200,6 +200,10 @@ const getMediasoupWorker = () => {
 const getOrCreateRoom = async ({ roomId, socket }) => {
   let room = roomList.get(roomId)
 
+  if (room && room.closed) {
+    room = null;
+  }
+
   if (!room) {
     const roomData = await roomService.getRoomById(roomId);
 
@@ -214,7 +218,10 @@ const getOrCreateRoom = async ({ roomId, socket }) => {
       room: roomData,
       hostId: host.id,
       socket,
-      worker: getMediasoupWorker()
+      worker: getMediasoupWorker(),
+      roomClose: () => {
+        roomList.delete(roomId)
+      }
     })
 
     roomList.set(room.id, room);

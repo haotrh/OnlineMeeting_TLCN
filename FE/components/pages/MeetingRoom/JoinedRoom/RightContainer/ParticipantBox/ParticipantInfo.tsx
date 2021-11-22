@@ -1,10 +1,53 @@
-import { FiMicOff } from "react-icons/fi";
-import { RiPushpin2Line } from "react-icons/ri";
-import { Peer } from "../../../../../../types/room.type";
+import { useContext } from "react";
+import {
+  IoHandLeftSharp,
+  IoMic,
+  IoMicOff,
+  IoVideocam,
+  IoVideocamOff,
+} from "react-icons/io5";
+import { useAppSelector } from "../../../../../../hooks/redux";
+import { Peer, SpotlightType } from "../../../../../../types/room.type";
+import { RoomContext } from "../../../../../contexts/RoomContext";
+import { ParticipantOptions } from "./ParticipantOptions";
+import { ParticipantTag } from "./ParticipantTag";
 
-const ParticipantInfo = ({ peer }: { peer: Peer }) => {
+const ParticipantInfo = ({
+  peer,
+  screen = false,
+  isMe = false,
+  onMic,
+  onWebcam,
+}: {
+  peer: Peer;
+  screen?: boolean;
+  isMe?: boolean;
+  onMic: boolean;
+  onWebcam: boolean;
+}) => {
+  const { pinSpotlight } = useContext(RoomContext);
+
+  const onPin = (spotlightType: SpotlightType) => {
+    if (isMe) {
+      pinSpotlight(
+        { type: spotlightType, peerId: peer.id },
+        spotlightType === "peer" ? "myview" : "myscreen"
+      );
+    } else {
+      pinSpotlight(
+        {
+          type: spotlightType,
+          peerId: peer.id,
+        },
+        "otherpeer"
+      );
+    }
+  };
+
+  const { spotlights, pin } = useAppSelector((selector) => selector.room);
+
   return (
-    <div className="rounded-2xl px-2 py-0.5 flex items-center text-gray-700">
+    <div className="px-6 py-2 flex items-center text-gray-700 hover:bg-gray-100/50  transition-colors relative">
       <div className="mr-3 flex-shrink-0">
         <div className="w-10 h-10 rounded-full overflow-hidden">
           <img
@@ -15,18 +58,49 @@ const ParticipantInfo = ({ peer }: { peer: Peer }) => {
         </div>
       </div>
       <div>
-        <div className="flex-shrink-0 font-semibold text-[14px]">
-          {peer.name}
+        <div className="flex-shrink-0 font-bold text-[14px] flex items-center space-x-2">
+          <div>{peer.name}</div>
+          {isMe && <ParticipantTag name="You" />}
+          {peer.isHost && <ParticipantTag name="Host" />}
+          {screen && <ParticipantTag name="Sharing" />}
         </div>
-        {peer.isHost && <div className="text-[13px] font-semibold text-gray-500">Meeting host</div>}
+        <div className="text-[13px] font-semibold text-gray-500">
+          {peer.email}
+        </div>
       </div>
-      <div className="flex-1 flex justify-end space-x-1 text-lg">
-        <button className="w-10 h-10 hover:bg-gray-200 flex-center rounded-full">
-          <FiMicOff />
-        </button>
-        <button className="w-10 h-10 hover:bg-gray-200 flex-center rounded-full">
-          <RiPushpin2Line />
-        </button>
+      <div className="flex-1 flex justify-end space-x-4 text-lg items-center text-gray-600">
+        {onMic || peer.isSpeaking ? (
+          <IoMic />
+        ) : (
+          <IoMicOff className="text-gray-400" />
+        )}
+        {onWebcam ? (
+          <IoVideocam />
+        ) : (
+          <IoVideocamOff className="text-gray-400" />
+        )}
+        {peer.raisedHand && <IoHandLeftSharp />}
+        <ParticipantOptions
+          peer={peer}
+          onPin={onPin}
+          screen={screen}
+          isHost={peer.isHost}
+          isMe={isMe}
+          isPinned={
+            (pin === "myview" && isMe) ||
+            (pin === "otherpeer" &&
+              spotlights.length > 0 &&
+              spotlights[0].peerId === peer.id &&
+              spotlights[0].type === "peer")
+          }
+          isScreenPinned={
+            (pin === "myscreen" && isMe) ||
+            (pin === "otherpeer" &&
+              spotlights.length > 0 &&
+              spotlights[0].peerId === peer.id &&
+              spotlights[0].type === "screen")
+          }
+        />
       </div>
     </div>
   );

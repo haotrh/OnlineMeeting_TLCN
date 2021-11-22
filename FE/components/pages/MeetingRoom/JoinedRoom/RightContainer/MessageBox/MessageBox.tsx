@@ -1,15 +1,16 @@
 import classNames from "classnames";
 import _ from "lodash";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useContext, useEffect, useRef, useState } from "react";
 import { FaTelegramPlane } from "react-icons/fa";
+import { useAppDispatch, useAppSelector } from "../../../../../../hooks/redux";
+import { addMessage } from "../../../../../../lib/redux/slices/chat.slice";
+import { RoomContext } from "../../../../../contexts/RoomContext";
 import MyMessage from "./MyMessage";
 import OtherMessage from "./OtherMessage";
 
 export interface MessageType {
-  id: string;
-  name: string;
-  avatar: string;
-  messages: Array<string>;
+  message: string;
+  peerId: string;
 }
 
 export interface NewMessage {
@@ -27,69 +28,22 @@ const MessageBox = ({ hidden }: MessageBoxProps) => {
   const [text, setText] = useState("");
   const endMessageRef = useRef<null | HTMLDivElement>(null);
   const inputRef = useRef<null | HTMLInputElement>(null);
+  const { socket } = useContext(RoomContext);
+  const dispatch = useAppDispatch();
 
-  const [messages, setMessages] = useState<Array<MessageType>>([]);
+  const messages = useAppSelector((selector) => selector.chat);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (_.isEmpty(text)) {
       return;
     }
-    const info = [
-      {
-        id: "1",
-        name: "Hao",
-        avatar:
-          "https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50",
-      },
-      {
-        id: "2",
-        name: "Alexander",
-        avatar:
-          "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=identicon&f=y",
-      },
-      {
-        id: "3",
-        name: "Napoleon",
-        avatar:
-          "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=wavatar&f=y",
-      },
-      {
-        id: "4",
-        name: "DKMMM",
-        avatar:
-          "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=robohash&f=y",
-      },
-    ];
 
-    const randomInfo = info[_.random(info.length - 1)];
+    socket.request("chatMessage", { message: text });
 
-    handleUpdateMessage({
-      ...randomInfo,
-      message: text,
-    });
+    // dispatch(addMessage({ message: text, peerId: socket.id }));
+
     setText("");
-    inputRef.current?.focus();
-  };
-
-  const handleUpdateMessage = (newMessage: NewMessage) => {
-    let lastMessage = _.last(messages);
-    if (lastMessage?.id === newMessage.id) {
-      setMessages([
-        ...messages.slice(0, -1),
-        { ...lastMessage, messages: [...lastMessage.messages, text] },
-      ]);
-    } else {
-      setMessages([
-        ...messages,
-        {
-          id: newMessage.id,
-          name: newMessage.name,
-          avatar: newMessage.avatar,
-          messages: [newMessage.message],
-        },
-      ]);
-    }
   };
 
   const scrollToBottom = () => {
@@ -110,14 +64,14 @@ const MessageBox = ({ hidden }: MessageBoxProps) => {
           }
         )}
       >
-        <div>
-          {messages.map((message) => {
-            return message.id === "1" ? (
+        <div className="text-sm font-medium">
+          {messages.map((message) =>
+            message.peerId === socket.id ? (
               <MyMessage messageInfo={message} />
             ) : (
               <OtherMessage messageInfo={message} />
-            );
-          })}
+            )
+          )}
           <div ref={endMessageRef} />
         </div>
       </div>

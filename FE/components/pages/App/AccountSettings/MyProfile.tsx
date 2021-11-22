@@ -16,6 +16,8 @@ const MyProfile = () => {
       <div className="flex space-x-16">
         <div className="flex-shrink-0">
           <Avatar
+            src={user?.profilePic}
+            name={user?.firstName}
             className="overflow-hidden rounded-full group cursor-pointer"
             size={120}
           >

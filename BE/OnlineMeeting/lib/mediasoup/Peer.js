@@ -4,6 +4,8 @@ module.exports = class Peer {
 
     this.name = user.displayName;
 
+    this.email = user.email;
+
     this.picture = user.profilePic;
 
     this.isHost = isHost ?? false;
@@ -88,6 +90,7 @@ module.exports = class Peer {
       picture: this.picture,
       isHost: this.isHost,
       raisedHand: this.raisedHand,
+      email: this.email
     }
 
     return peerInfo

@@ -25,8 +25,6 @@ module.exports = class Room {
 
     this.worker = worker;
 
-    this.audioLevelObserver = audioLevelObserver;
-
     this.id = roomId;
 
     this.hostId = hostId;
@@ -43,6 +41,13 @@ module.exports = class Room {
 
     this.allowScreenShare = room.allowScreenShare;
 
+    this.selfDestructTimeout = null;
+
+    this.closed = false;
+
+    //All peers included joined, requesting, lobby peers
+    this.allPeers = new Map();
+
     //Joined peers
     this.peers = new Map();
 
@@ -51,6 +56,40 @@ module.exports = class Room {
 
     //List of request to join users
     this.requestPeers = new Map();
+
+    // mediasoup AudioLevelObserver.
+    this.audioLevelObserver = audioLevelObserver;
+
+    this.handleAudioLevelObserver();
+  }
+
+  handleAudioLevelObserver() {
+    this.audioLevelObserver.on('volumes', (volumes) => {
+      const { producer, volume } = volumes[0];
+
+      // Notify all Peers.
+      for (const peer of this.getJoinedPeers()) {
+        this.notification(
+          peer.socket,
+          'activeSpeaker',
+          {
+            peerId: producer.appData.peerId,
+            volume: volume
+          });
+      }
+    })
+
+    this.audioLevelObserver.on('silence', () => {
+      // Notify all Peers.
+      for (const peer of this.getJoinedPeers()) {
+        this.notification(
+          peer.socket,
+          'activeSpeaker',
+          { peerId: null }
+        );
+      }
+    });
+
   }
 
   isPeerValid(peerId) {
@@ -126,7 +165,7 @@ module.exports = class Room {
     }
   }
 
-  async createConsumer({ consumerPeer, producerPeer, producer, socket }) {
+  async createConsumer({ consumerPeer, producerPeer, producer }) {
     const router = this.router;
 
     if (!consumerPeer.rtpCapabilities || !router.canConsume({
@@ -173,20 +212,20 @@ module.exports = class Room {
     consumer.on('producerclose', () => {
       consumerPeer.closeConsumer(consumer.id);
 
-      this.notification(consumer.socket, 'consumerClosed', { consumerId: consumer.id });
+      this.notification(consumerPeer.socket, 'consumerClosed', { consumerId: consumer.id });
     });
 
     consumer.on('producerpause', () => {
-      this.notification(consumer.socket, 'consumerPaused', { consumerId: consumer.id });
+      this.notification(consumerPeer.socket, 'consumerPaused', { consumerId: consumer.id });
     });
 
     consumer.on('producerresume', () => {
-      this.notification(consumer.socket, 'consumerResumed', { consumerId: consumer.id });
+      this.notification(consumerPeer.socket, 'consumerResumed', { consumerId: consumer.id });
     });
 
-    consumer.on('score', (score) => {
-      this.notification(consumer.socket, 'consumerScore', { consumerId: consumer.id, score });
-    });
+    // consumer.on('score', (score) => {
+    //   this.notification(consumerPeer.socket, 'consumerScore', { consumerId: consumer.id, score });
+    // });
 
     try {
       await this.request(
@@ -206,14 +245,14 @@ module.exports = class Room {
 
       await consumer.resume();
 
-      this.notification(
-        consumerPeer.socket,
-        'consumerScore',
-        {
-          consumerId: consumer.id,
-          score: consumer.score
-        }
-      );
+      // this.notification(
+      //   consumerPeer.socket,
+      //   'consumerScore',
+      //   {
+      //     consumerId: consumer.id,
+      //     score: consumer.score
+      //   }
+      // );
     }
     catch (error) {
       logger.warn('_createConsumer() | [error:"%o"]', error);
@@ -241,6 +280,15 @@ module.exports = class Room {
 
         const joinedPeers = this.getJoinedPeers()
 
+        if (peer.isHost) {
+          this.hostSocketIds.add(peer.id);
+        }
+
+        peer.socket.join(this.id)
+        this.peers.set(peer.id, peer);
+
+        cb(this.toJson(peer));
+
         //Create consumers for existing Producers
         for (const joinedPeer of joinedPeers) {
           for (const producer of joinedPeer.producers.values()) {
@@ -251,15 +299,6 @@ module.exports = class Room {
             })
           }
         }
-
-        if (peer.isHost) {
-          this.hostSocketIds.add(peer.id);
-        }
-
-        peer.socket.join(this.id)
-        this.peers.set(peer.id, peer);
-
-        cb(this.toJson(peer));
 
         //Notify new peer to all peers
         for (const otherPeer of this.getJoinedPeers(peer.id)) {
@@ -280,6 +319,7 @@ module.exports = class Room {
         }
 
         const { rtpCapabilities } = request.data;
+
         peer.rtpCapabilities = rtpCapabilities;
 
         this.requestPeers.set(peer.id, peer);
@@ -299,28 +339,36 @@ module.exports = class Room {
 
         const requestPeer = this.requestPeers.get(peerId)
 
-        if (!peer) {
+        if (!requestPeer) {
           cb({ error: "Peer did not request" })
           throw new Error("Peer did not request")
         }
 
-        //Create consumers for existing Producers
-        for (const joinedPeer of this.getJoinedPeers()) {
-          for (const producer of joinedPeer.producers.values()) {
-            this.createConsumer({
-              consumerPeer: peer,
-              producerPeer: joinedPeer,
-              producer
-            })
-          }
-        }
+        cb();
 
         this.requestPeers.delete(peerId)
         this.invitedIds.add(requestPeer.authId)
         this.peers.set(peerId, requestPeer)
 
         //Notify accepted peer
-        this.notification(requestPeer.socket, "acceptedPeer", this.toJson(requestPeer))
+        await this.request(requestPeer.socket, "acceptedPeer", this.toJson(requestPeer))
+
+        //Create consumers for existing Producers
+        for (const joinedPeer of this.getJoinedPeers(peerId)) {
+          for (const producer of joinedPeer.producers.values()) {
+            this.createConsumer({
+              consumerPeer: requestPeer,
+              producerPeer: joinedPeer,
+              producer
+            })
+          }
+        }
+
+        //Notify to all host
+        for (const hostSocketId of this.hostSocketIds) {
+          const hostPeer = this.peers.get(hostSocketId);
+          this.notification(hostPeer.socket, "askToJoinPeerLeave", { peerId })
+        }
 
         //Notify new peer to all peers
         for (const otherPeer of this.getJoinedPeers(requestPeer.id)) {
@@ -330,8 +378,6 @@ module.exports = class Room {
             requestPeer.getInfo()
           );
         }
-
-        cb();
 
         break;
       }
@@ -355,6 +401,12 @@ module.exports = class Room {
 
           //Notify accepted peer
           this.notification(peer.socket, "acceptedPeer", this.toJson(peer))
+
+          //Notify to all host all peers are accepted
+          for (const hostSocketId of this.hostSocketIds) {
+            const hostPeer = this.peers.get(hostSocketId);
+            this.notification(hostPeer.socket, "askToJoinPeerAllLeave")
+          }
 
           //Notify new peer to all peers
           for (const otherPeer of this.getJoinedPeers(peer.id)) {
@@ -450,6 +502,7 @@ module.exports = class Room {
 
       case 'connectWebRtcTransport': {
         const { transportId, dtlsParameters } = request.data;
+
         await peer.connectTransport(transportId, dtlsParameters)
 
         cb()
@@ -508,6 +561,10 @@ module.exports = class Room {
 
         peer.addProducer(producer)
 
+        // producer.on('score', (score) => {
+        //   this.notification(peer.socket, 'producerScore', { producerId: producer.id, score })
+        // })
+
         cb({ producerId: producer.id })
 
         for (const otherPeer of this.getJoinedPeers(peer.id)) {
@@ -518,9 +575,12 @@ module.exports = class Room {
           })
         }
 
+        // Add into the audioLevelObserver.
         if (kind === 'audio') {
-          this.audioLevelObserver.addProducer({ producerId: producer.id }).catch(() => { })
+          this.audioLevelObserver.addProducer({ producerId: producer.id })
+            .catch(() => { });
         }
+
 
         break;
       }
@@ -545,6 +605,7 @@ module.exports = class Room {
 
       case 'pauseProducer': {
         const { producerId } = request.data;
+
         const producer = peer.getProducer(producerId);
 
         if (!producer) {
@@ -607,26 +668,334 @@ module.exports = class Room {
         break;
       }
 
-      case 'sendMessage': {
+      case 'setConsumerPreferedLayers':
+        {
+          const { consumerId, spatialLayer, temporalLayer } = request.data;
+          const consumer = peer.getConsumer(consumerId);
+
+          if (!consumer)
+            throw new Error(`consumer with id "${consumerId}" not found`);
+
+          await consumer.setPreferredLayers({ spatialLayer, temporalLayer });
+
+          cb();
+
+          break;
+        }
+
+      case 'setConsumerPriority':
+        {
+          const { consumerId, priority } = request.data;
+          const consumer = peer.getConsumer(consumerId);
+
+          if (!consumer)
+            throw new Error(`consumer with id "${consumerId}" not found`);
+
+          await consumer.setPriority(priority);
+
+          cb();
+
+          break;
+        }
+
+      case 'requestConsumerKeyFrame':
+        {
+          const { consumerId } = request.data;
+          const consumer = peer.getConsumer(consumerId);
+
+          if (!consumer)
+            throw new Error(`consumer with id "${consumerId}" not found`);
+
+          await consumer.requestKeyFrame();
+
+          cb();
+
+          break;
+        }
+
+      case 'getTransportStats':
+        {
+          const { transportId } = request.data;
+          const transport = peer.getTransport(transportId);
+
+          if (!transport) {
+            cb({ error: "transport not found" })
+            throw new Error(`transport with id "${transportId}" not found`);
+          }
+
+          const stats = await transport.getStats();
+
+          cb(stats);
+
+          break;
+        }
+
+      case 'getProducerStats':
+        {
+          const { producerId } = request.data;
+          const producer = peer.getProducer(producerId);
+
+          if (!producer) {
+            cb({ error: "Producer not found" })
+            throw new Error(`producer with id "${producerId}" not found`);
+          }
+
+          const stats = await producer.getStats();
+
+          cb(stats);
+
+          break;
+        }
+
+      case 'getConsumerStats':
+        {
+          const { consumerId } = request.data;
+          const consumer = peer.getConsumer(consumerId);
+
+          if (!consumer) {
+            cb({ error: "consumer not found" })
+            throw new Error(`consumer with id "${consumerId}" not found`);
+          }
+
+          const stats = await consumer.getStats();
+
+          cb(stats);
+
+          break;
+        }
+
+      case 'chatMessage': {
         const { message } = request.data;
+
         if (!message) {
           cb({ error: "Please enter message" })
           return
         }
 
-        for (const peer of this.getJoinedPeers(peer.id)) {
-          this.notification(peer.socket, "sendMessage", {})
+        for (const otherPeer of this.getJoinedPeers()) {
+          this.notification(otherPeer.socket, "chatMessage", { message, peerId: peer.id })
         }
 
         break;
       }
 
-      case 'raisedHand': {
+      case 'getMyRoomInfo': {
+        cb(this.toJson(peer))
+
         break;
       }
 
-      case 'getMyRoomInfo': {
-        cb(this.toJson(peer))
+      case 'raiseHand': {
+        if (peer.raisedHand) {
+          cb({ error: "Already raised" })
+          throw new Error("Already raised")
+        }
+        console.log("raisehand")
+
+        peer.raisedHand = true;
+
+        for (const otherPeer of this.getJoinedPeers(peer.id)) {
+          console.log(otherPeer.name, otherPeer.id)
+          this.notification(otherPeer.socket, "raisedHand", { peerId: peer.id })
+        }
+
+        cb()
+
+        break;
+      }
+
+      case 'lowerHand': {
+        if (!peer.raisedHand) {
+          cb({ error: "Not raised" })
+          throw new Error("Not raised")
+        }
+        peer.raisedHand = false;
+
+        for (const otherPeer of this.getJoinedPeers(peer.id)) {
+          this.notification(otherPeer.socket, "lowerHand", { peerId: peer.id })
+        }
+
+        cb()
+
+        break;
+      }
+
+      case 'host:mute': {
+        if (peer.isHost) {
+          const { peerId } = request.data;
+
+          const peer = this.peers.get(peerId)
+
+          if (!peer) {
+            cb({ error: "Peer not found!" })
+            throw new Error("Peer not found!")
+          }
+
+          this.notification(peer.socket, "host:mute");
+        }
+
+        cb()
+
+        break;
+      }
+
+      case 'host:stopVideo': {
+        if (peer.isHost) {
+          const { peerId } = request.data;
+
+          const peer = this.peers.get(peerId)
+
+          if (!peer) {
+            cb({ error: "Peer not found!" })
+            throw new Error("Peer not found!")
+          }
+
+          this.notification(peer.socket, "host:stopVideo");
+        }
+
+        cb()
+
+        break;
+      }
+
+      case 'host:stopScreenSharing': {
+        if (peer.isHost) {
+          const { peerId } = request.data;
+
+          const peer = this.peers.get(peerId)
+
+          if (!peer) {
+            cb({ error: "Peer not found!" })
+            throw new Error("Peer not found!")
+          }
+
+          this.notification(peer.socket, "host:stopScreenSharing");
+        }
+
+        cb()
+
+        break;
+      }
+
+      case 'host:lowerHand': {
+        if (peer.isHost) {
+          const { peerId } = request.data;
+
+          const peer = this.peers.get(peerId)
+
+          if (!peer) {
+            cb({ error: "Peer not found!" })
+            throw new Error("Peer not found!")
+          }
+
+          this.notification(peer.socket, "host:lowerHand");
+        }
+
+        cb()
+
+        break;
+      }
+
+      case 'host:kick': {
+        if (peer.isHost) {
+          const { peerId } = request.data;
+
+          const peer = this.peers.get(peerId)
+
+          if (!peer) {
+            cb({ error: "Peer not found!" })
+            throw new Error("Peer not found!")
+          }
+
+          this.notification(peer.socket, "host:kick");
+        }
+
+        cb()
+
+        break;
+      }
+
+      case 'host:turnOnScreenSharing': {
+        this.allowScreenShare = true;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOnScreenSharing")
+        }
+
+        break;
+      }
+
+      case 'host:turnOffScreenSharing': {
+        this.allowScreenShare = false;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOffScreenSharing")
+        }
+
+        break;
+      }
+
+      case 'host:turnOnChat': {
+        this.allowScreenShare = false;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOnChat")
+        }
+
+        break;
+      }
+
+      case 'host:turnOffChat': {
+        this.allowScreenShare = false;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOffChat")
+        }
+
+
+        break;
+      }
+
+      case 'host:turnOnMicrophone': {
+        this.allowScreenShare = false;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOnMicrophone")
+        }
+
+
+        break;
+      }
+
+      case 'host:turnOffMicrophone': {
+        this.allowScreenShare = false;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOffMicrophone")
+        }
+
+
+        break;
+      }
+
+      case 'host:turnOnVideo': {
+        this.allowScreenShare = false;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOnVideo")
+        }
+
+
+        break;
+      }
+
+      case 'host:turnOffVideo': {
+        this.allowScreenShare = false;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOffVideo")
+        }
+
 
         break;
       }
@@ -640,7 +1009,9 @@ module.exports = class Room {
   }
 
   removePeer(peerId) {
-    let peer = this.peers.get(peerId)
+    let peer = this.peers?.get(peerId)
+
+    this.allPeers.delete(peerId);
 
     if (peer) {
       peer.close();
@@ -650,6 +1021,9 @@ module.exports = class Room {
 
       for (const peer of this.peers.values()) {
         this.notification(peer.socket, "peerLeave", { peerId })
+      }
+      if (this.peers.size === 0) {
+        this.selfDestructCountdown()
       }
       return
     }
@@ -665,24 +1039,80 @@ module.exports = class Room {
         const hostPeer = this.peers.get(hostSocketId);
         this.notification(hostPeer.socket, "askToJoinPeerLeave", { peerId })
       }
+
       return
     }
   }
 
+  getPeersInfo(peerId) {
+    return [...this.peers.values()].filter(peer => peer.id !== peerId).map(peer => peer.getInfo())
+  }
+
+  getRequestPeersInfo() {
+    return [...this.requestPeers.values()].map(peer => peer.getInfo())
+  }
+
+  selfDestructCountdown() {
+    if (this.selfDestructTimeout) {
+      clearTimeout(this.selfDestructTimeout)
+    }
+
+    this.selfDestructTimeout = setTimeout(() => {
+      if (this.closed) return;
+
+      if (this.peers.size === 0) {
+        this.close();
+      } else {
+        console.log("selfDestructCountdown() aborted; room is not empty!")
+      }
+    }, 10000)
+  }
+
+  close() {
+    for (const peer in this.allPeers.values()) {
+      this.notification(peer.socket, "roomClosed")
+      peer.close();
+    }
+
+    this.allPeers = null;
+
+    this.audioLevelObserver = null;
+
+    this.hostId = null;
+
+    this.hostSocketIds = null;
+
+    this.invitedIds = null;
+
+    this.requestPeers = null;
+
+    this.peers = null;
+
+    this.router.close();
+
+    this.router = null;
+
+    this.worker = null;
+
+    this.closed = true;
+  }
+
   toJson(peer = undefined) {
-    const peers = [...this.peers.values()].map(peer => peer.getInfo())
-    const requestPeers = [...this.requestPeers.values()].map(peer => peer.getInfo())
+    const peers = this.getPeersInfo(peer.id)
+    const requestPeers = this.getRequestPeersInfo()
 
     return {
       id: this.id,
       name: this.name,
+      me: peer.getInfo(),
       allowCamera: this.allowCamera,
       allowChat: this.allowChat,
       allowMicrophone: this.allowMicrophone,
       allowScreenShare: this.allowScreenShare,
       allowToJoin: this.invitedIds.has(peer.authId) || this.hostId === peer.authId,
       peers,
-      requestPeers: this.hostId === peer.authId ? requestPeers : null
+      requestPeers: this.hostId === peer.authId ? requestPeers : [],
+      isHost: this.hostId === peer.authId
     };
   }
 }

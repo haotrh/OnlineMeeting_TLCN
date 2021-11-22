@@ -12,7 +12,6 @@ const Popover = forwardRef<HTMLDivElement, TippyProps>(
     };
 
     const onHide = ({ unmount }: any) => {
-      console.log("Hide");
       controls.start({ opacity: 0, scale: 0.7 });
     };
 
@@ -29,10 +28,10 @@ const Popover = forwardRef<HTMLDivElement, TippyProps>(
               animate={controls}
               transition={{ duration: 0.1 }}
               className={classNames("relative", className, {
-                "origin-bottom-left": className,
+                // "origin-bottom-left": attrs["data-placement"] === "top-end",
               })}
             >
-              <div className="relative z-10">{content}</div>
+              <div className="relative z-50">{content}</div>
             </motion.div>
           )}
           {...props}

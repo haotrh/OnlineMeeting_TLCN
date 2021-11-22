@@ -60,8 +60,9 @@ const Modal = ({
                 }}
                 key="modal"
                 aria-hidden={isOpen ? "false" : "true"}
-                initial={{ opacity: 0.3, y: 100 }}
+                initial={{ opacity: 0.3, y: 100, scale: 0.9, x: "-50%" }}
                 animate={{
+                  scale: 1,
                   opacity: 1,
                   y: 0,
                   transition: {
@@ -76,10 +77,7 @@ const Modal = ({
                   opacity: 0.8,
                   transition: { duration: 0.1 },
                 }}
-                className={classNames(
-                  className,
-                  "fixed top-0 z-50 left-1/2 -translate-x-1/2"
-                )}
+                className={classNames(className, "fixed top-0 z-50 left-1/2")}
               >
                 {children}
               </motion.div>

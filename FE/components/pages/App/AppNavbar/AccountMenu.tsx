@@ -70,7 +70,7 @@ const AccountMenu = () => {
         className="cursor-pointer relative"
         onClick={() => setToggle(!toggle)}
       >
-        <Avatar />
+        <Avatar src={user?.profilePic} name={user?.firstName} />
         <div className="absolute p-0.5 bg-white flex-center bottom-0 right-0 rounded-full">
           <AiOutlineSetting size={13} />
         </div>

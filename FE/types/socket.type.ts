@@ -16,12 +16,27 @@ export type RequestMethod =
   | "pauseConsumer"
   | "resumeConsumer"
   | "chatMessage"
-  | "raisedHand"
+  | "raiseHand"
   | "getMyRoomInfo"
   | "acceptPeer"
   | "promoteAllPeers"
   | "denyPeer"
-  | "denyAllPeers";
+  | "denyAllPeers"
+  | "chatMessage"
+  | "lowerHand"
+  | "host:mute"
+  | "host:stopVideo"
+  | "host:stopScreenSharing"
+  | "host:lowerHand"
+  | "host:kick"
+  | "host:turnOnScreenSharing"
+  | "host:turnOffScreenSharing"
+  | "host:turnOnChat"
+  | "host:turnOffChat"
+  | "host:turnOnMicrophone"
+  | "host:turnOffMicrophone"
+  | "host:turnOnVideo"
+  | "host:turnOffVideo";
 
 export interface RoomSocket extends Socket {
   request: (type: RequestMethod, data?: any) => Promise<any>;

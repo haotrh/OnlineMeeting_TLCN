@@ -5,7 +5,11 @@ import Head from "next/head";
 import { QueryClient, QueryClientProvider } from "react-query";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
+import { store } from "../lib/redux/store";
 import "../styles/globals.css";
+import { Provider } from "react-redux";
+import { Slide, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const queryClient = new QueryClient();
 
@@ -23,7 +27,21 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
       </Head>
       <SessionProvider session={session}>
         <QueryClientProvider client={queryClient}>
-          <Component {...pageProps} />
+          <Provider store={store}>
+            <Component {...pageProps} />
+            <ToastContainer
+              limit={5}
+              position="bottom-left"
+              toastClassName="!bg-white shadow-md border !p-2 !min-h-0 !min-w-0 !rounded-lg"
+              bodyClassName="text-sm font-poppins !m-0 font-semibold text-gray-800"
+              autoClose={3000}
+              transition={Slide}
+              pauseOnHover={false}
+              hideProgressBar={true}
+              draggable={false}
+              closeButton={false}
+            />
+          </Provider>
         </QueryClientProvider>
       </SessionProvider>
     </>

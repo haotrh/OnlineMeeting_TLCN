@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FiPlus } from "react-icons/fi";
+import Button from "../../../common/Button/Button";
 import NewMeetingDrawer from "./NewMeetingDrawer";
 
 const NewMeetingButton = () => {
@@ -8,17 +9,10 @@ const NewMeetingButton = () => {
   return (
     <>
       <div className="px-2">
-        <div
-          onClick={() => setNewMeeting(true)}
-          className="border hover:border-blue-400 transition-colors select-none
-    border-gray-300 hover:text-blue-500 border-dashed rounded-lg
-    cursor-pointer flex-center flex-col h-full text-gray-400"
-        >
-          <div>
-            <FiPlus size={20} />
-          </div>
+        <Button onClick={() => setNewMeeting(true)} className="flex items-center !p-3">
+          <FiPlus className="mr-1.5" size={16} />
           <div className="font-bold text-sm">New meeting</div>
-        </div>
+        </Button>
       </div>
       <NewMeetingDrawer
         isOpen={newMeeting}

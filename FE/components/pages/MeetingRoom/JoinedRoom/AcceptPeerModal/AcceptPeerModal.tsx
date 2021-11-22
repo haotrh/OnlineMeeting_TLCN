@@ -1,37 +1,38 @@
 import _ from "lodash";
 import { useContext } from "react";
+import { useAppDispatch, useAppSelector } from "../../../../../hooks/redux";
+import {
+  addRequestPeers,
+  clearRequestPeer,
+  removeRequestPeer,
+} from "../../../../../lib/redux/slices/requestPeers.slice";
 import Modal from "../../../../common/Modal/Modal";
 import { RoomContext } from "../../../../contexts/RoomContext";
 
 export const AcceptPeerModal = () => {
-  const { roomInfo, socket, requestPeers, setRequestPeers } =
-    useContext(RoomContext);
+  const { socket } = useContext(RoomContext);
+
+  const requestPeers = useAppSelector((selector) => selector.requestPeers);
+
+  const dispatch = useAppDispatch();
 
   const denyOne = (peerId: string) => {
-    socket.request("denyPeer", { peerId }).then(() => {
-      setRequestPeers(
-        roomInfo.requestPeers?.filter((peer) => peer.id !== peerId) || null
-      );
-    });
+    socket.request("denyPeer", { peerId });
   };
 
   const denyAll = () => {
-    socket.request("denyAllPeers").then(() => {
-      setRequestPeers([]);
-    });
+    socket.request("denyAllPeers");
   };
 
   const acceptOne = (peerId: string) => {
     socket.request("acceptPeer", { peerId }).then(() => {
-      setRequestPeers(
-        roomInfo.requestPeers?.filter((peer) => peer.id !== peerId) || null
-      );
+      dispatch(removeRequestPeer({ peerId }));
     });
   };
 
   const acceptAll = () => {
     socket.request("acceptAllPeers").then(() => {
-      setRequestPeers([]);
+      dispatch(clearRequestPeer());
     });
   };
 
@@ -45,7 +46,7 @@ export const AcceptPeerModal = () => {
         Someone wants to join this meeting
       </h2>
       <div className="mb-3 space-y-3">
-        {requestPeers?.map((peer) => (
+        {_.values(requestPeers).map((peer) => (
           <div className="flex items-center" key={`requestPeer${peer.id}`}>
             <div>
               <img
@@ -59,7 +60,7 @@ export const AcceptPeerModal = () => {
             </div>
           </div>
         ))}
-        {requestPeers?.map((peer) => (
+        {_.values(requestPeers).map((peer) => (
           <div className="flex items-center" key={`requestPeer${peer.id}`}>
             <div>
               <img
@@ -77,7 +78,7 @@ export const AcceptPeerModal = () => {
       <div className="flex justify-end text-[13px] space-x-5 text-blue-600 font-be">
         <button
           onClick={() => {
-            if (requestPeers?.length === 1) {
+            if (Object.keys(requestPeers).length === 1) {
               denyOne(requestPeers[0].id);
             } else {
               denyAll();
@@ -85,19 +86,19 @@ export const AcceptPeerModal = () => {
           }}
           className="font-semibold hover:text-blue-700 transition-colors"
         >
-          {requestPeers?.length === 1 ? "Deny entry" : "Deny all"}
+          {Object.keys(requestPeers).length === 1 ? "Deny entry" : "Deny all"}
         </button>
         <button
           onClick={() => {
-            if (requestPeers?.length === 1) {
-              acceptOne(requestPeers[0].id);
+            if (Object.keys(requestPeers).length === 1) {
+              acceptOne(Object.keys(requestPeers)[0]);
             } else {
               acceptAll();
             }
           }}
           className="font-semibold hover:text-blue-700 transition-colors"
         >
-          {requestPeers?.length === 1 ? "Accept" : "Accept all"}
+          {Object.keys(requestPeers).length === 1 ? "Accept" : "Accept all"}
         </button>
       </div>
     </Modal>

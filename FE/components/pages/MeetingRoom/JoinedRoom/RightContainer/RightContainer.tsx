@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { useContext, useState } from "react";
-import { RoomContext } from "../../../../contexts/RoomContext";
+import { useState } from "react";
+import { useAppSelector } from "../../../../../hooks/redux";
 import BoxButton from "./BoxButton";
 import MessageBox from "./MessageBox/MessageBox";
 import ParticipantBox from "./ParticipantBox/ParticipantBox";
@@ -16,7 +16,7 @@ enum ContainerBoxType {
 }
 
 const RightContainer = ({ show }: { show: boolean }) => {
-  const { peers } = useContext(RoomContext);
+  const peers = useAppSelector((selector) => selector.peers);
 
   const [currentBox, setCurrentBox] = useState<ContainerBoxType>(
     ContainerBoxType.MESSAGES
@@ -46,12 +46,9 @@ const RightContainer = ({ show }: { show: boolean }) => {
         ease: "easeInOut",
         duration: 0.01,
       }}
-      className="bg-white flex flex-col transition-all w-[480px] h-full"
+      className="flex flex-col transition-all w-[480px] h-full bg-white"
     >
-      <div
-        className="bg-white text-[14px] flex border-b space-x-1.5
-      border-gray-200 bg-opacity-30 backdrop-blur-md p-4"
-      >
+      <div className="text-[14px] flex border-b space-x-1.5 border-gray-200 p-4">
         <BoxButton
           className="flex-1 flex-center"
           active={currentBox === ContainerBoxType.MESSAGES}
@@ -74,7 +71,7 @@ const RightContainer = ({ show }: { show: boolean }) => {
           className="flex-1 flex-center"
           active={currentBox === ContainerBoxType.PEOPLE}
           onClick={() => changeBox(ContainerBoxType.PEOPLE)}
-          text={`People (${peers.length})`}
+          text={`People (${Object.keys(peers).length + 1})`}
         />
       </div>
       <MessageBox hidden={currentBox !== ContainerBoxType.MESSAGES} />

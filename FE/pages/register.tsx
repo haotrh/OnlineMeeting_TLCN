@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import Button from "../components/common/Button/Button";
 import FloatingInput from "../components/common/Input/FloatingInput";
-import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
