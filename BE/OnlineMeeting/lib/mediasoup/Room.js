@@ -1061,6 +1061,7 @@ module.exports = class Room {
       if (this.closed) return;
 
       if (this.peers.size === 0) {
+        console.log("selfDestructCountdown()")
         this.close();
       } else {
         console.log("selfDestructCountdown() aborted; room is not empty!")

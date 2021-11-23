@@ -1,7 +1,14 @@
+import classNames from "classnames";
 import React, { useEffect, useRef } from "react";
 
 export const VideoView = React.memo(
-  ({ track }: { track: MediaStreamTrack | null }) => {
+  ({
+    track,
+    isScreen,
+  }: {
+    track: MediaStreamTrack | null;
+    isScreen: boolean;
+  }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -27,7 +34,10 @@ export const VideoView = React.memo(
         playsInline
         muted
         controls={false}
-        className="absolute w-full h-full z-40 object-cover"
+        className={classNames("absolute w-full h-full z-40", {
+          "object-contain object-top": isScreen,
+          "object-cover": !isScreen,
+        })}
       />
     );
   }

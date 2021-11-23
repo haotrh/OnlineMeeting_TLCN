@@ -170,9 +170,8 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
     if (oldMaxSpotlights !== max) {
       spotlightsUpdated();
+      dispatch(setLastN(max));
     }
-
-    dispatch(setLastN(max));
   };
 
   const addScreenToSpotlight = (spotlight: Spotlight) => {
@@ -290,7 +289,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   const unpinSpotlight = () => {
     pin.current = null;
 
-    spotlightsUpdated();
+    changeMaxSpotlights(12);
 
     dispatch(setPin(null));
   };
@@ -891,6 +890,8 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
     if (!screenProducerRef.current) return;
 
     dispatch(setScreenShareInProgress({ flag: true }));
+
+    if (pin.current === "myscreen") unpinSpotlight();
 
     screenProducerRef.current.close();
 

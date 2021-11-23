@@ -4,4 +4,8 @@ module.exports = class Question {
         this.timestamp = Date.now()
         this.reply = null
     }
+
+    answerQuestion(content){
+        
+    }
 }
