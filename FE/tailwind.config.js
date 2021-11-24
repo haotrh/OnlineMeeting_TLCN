@@ -19,6 +19,8 @@ module.exports = {
         indigo: colors.indigo,
         lightblue: "#EDF0FF",
         "lightblue-100": "#e3e7ff",
+        truegray: colors.trueGray,
+        warmgray: colors.warmGray
       }
     },
   },

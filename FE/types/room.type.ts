@@ -6,6 +6,26 @@ export type ConsumerType = "mic" | "webcam" | "screen";
 
 export type PinType = "myview" | "myscreen" | "otherpeer" | null;
 
+export interface QuestionReply {
+  answer: string;
+  timestamp: number;
+}
+
+export interface Question {
+  id: string;
+  question: string;
+  timestamp: number;
+  reply: QuestionReply;
+  upvotes: number;
+  user: {
+    displayName: string;
+    profilePic: string;
+    id: string;
+  };
+  isClosed: boolean;
+  isVoted: boolean;
+}
+
 export interface Spotlight {
   type: SpotlightType;
   peerId: string;

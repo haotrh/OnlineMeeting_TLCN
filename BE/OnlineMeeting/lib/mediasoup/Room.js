@@ -1,6 +1,7 @@
 const logger = require('../../config/logger.config');
 const config = require('../../config/mediasoup.config');
-const SocketTimeoutError = require('../../utils/SocketTimeoutError')
+const SocketTimeoutError = require('../../utils/SocketTimeoutError');
+const Question = require('./Question');
 
 module.exports = class Room {
   static async create({ roomId, worker, hostId, room }) {
@@ -59,6 +60,8 @@ module.exports = class Room {
 
     // mediasoup AudioLevelObserver.
     this.audioLevelObserver = audioLevelObserver;
+
+    this.questions = new Map()
 
     this.handleAudioLevelObserver();
   }
@@ -765,6 +768,11 @@ module.exports = class Room {
         }
 
       case 'chatMessage': {
+        if (!this.peers.has(peer.id)) {
+          cb({ error: "You are not in the room" })
+          return;
+        }
+
         const { message } = request.data;
 
         if (!message) {
@@ -817,6 +825,124 @@ module.exports = class Room {
 
         cb()
 
+        break;
+      }
+
+      case 'askNewQuestion': {
+        if (!this.peers.has(peer.id)) {
+          cb({ error: "You are not in the room" })
+          return;
+        }
+
+        const { question } = request.data;
+
+        if (!question) {
+          cb({ error: "Please enter question" })
+          return
+        }
+
+        const newQuestion = new Question({ peerId: peer.authId, question })
+
+        this.questions.set(newQuestion.id, newQuestion)
+
+        for (const otherPeer of this.getJoinedPeers(peer.id)) {
+          this.notification(otherPeer.socket, "newQuestion", await newQuestion.getInfo())
+        }
+
+        cb(await newQuestion.getInfo())
+
+        break;
+      }
+
+      case 'upvoteQuestion': {
+        if (!this.peers.has(peer.id)) {
+          cb({ error: "You are not in the room" })
+          return;
+        }
+
+        const { questionId } = request.data;
+
+        if (!questionId) {
+          cb({ error: "No question id" })
+          return
+        }
+
+        const question = this.questions.get(questionId)
+
+        if (!question) {
+          cb({ error: "Question not found!" })
+          return
+        }
+
+        question.upvote(peer.authId)
+
+        for (const otherPeer of this.getJoinedPeers(peer.id)) {
+          this.notification(otherPeer.socket, "upvoteQuestion", { questionId, upvotes: question.getUpvote(), isVoted: question.getIsVoted(otherPeer.authId) })
+        }
+
+        cb({ upvotes: question.getUpvote(), isVoted: question.getIsVoted(peer.authId) })
+
+        break;
+      }
+
+      case 'host:deleteQuestion': {
+        if (peer.isHost) {
+          const { questionId } = request.data;
+
+          if (!this.questions.has(questionId)) {
+            cb({ error: "Question not found" })
+            return;
+          }
+
+          this.questions.delete(questionId)
+
+          for (const otherPeer of this.getJoinedPeers(peer.id)) {
+            this.notification(otherPeer.socket, "deleteQuestion", { questionId })
+          }
+        }
+
+        cb()
+
+        break;
+      }
+
+      case 'host:replyQuestion': {
+        if (peer.isHost) {
+          const { questionId, answer } = request.data;
+
+          const question = this.questions.get(questionId)
+
+          if (!question) {
+            cb({ error: "Question not found" })
+            return;
+          }
+
+          question.answerQuestion(answer)
+
+          for (const otherPeer of this.getJoinedPeers(peer.id)) {
+            this.notification(otherPeer.socket, "replyQuestion", { questionId, reply: question.reply })
+          }
+
+          cb(question.reply)
+        }
+
+        break;
+      }
+
+      case 'getQuestions': {
+        if (!this.peers.has(peer.id)) {
+          cb({ error: "You are not in the room" })
+          return;
+        }
+
+        const allQuestions = await Promise.all([...this.questions.values()].map(async (question) => await question.getInfo(peer.authId)))
+
+        cb(allQuestions)
+
+        break;
+      }
+
+      case 'newPoll': {
         break;
       }
 
@@ -1066,7 +1192,7 @@ module.exports = class Room {
       } else {
         console.log("selfDestructCountdown() aborted; room is not empty!")
       }
-    }, 10000)
+    }, 900000)
   }
 
   close() {

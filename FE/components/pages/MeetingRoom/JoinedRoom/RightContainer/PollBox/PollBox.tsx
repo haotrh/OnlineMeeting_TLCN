@@ -1,11 +1,15 @@
 import classNames from "classnames";
+import { useState } from "react";
 import Button from "../../../../../common/Button/Button";
+import PollDrawer from "./PollDrawer";
 
 interface PollProps {
   hidden: boolean;
 }
 
 const PollBox = ({ hidden }: PollProps) => {
+  const [isOpenDrawer, setIsOpenDrawer] = useState(false);
+
   return (
     <>
       <div
@@ -18,9 +22,18 @@ const PollBox = ({ hidden }: PollProps) => {
       ></div>
       <div className={classNames({ hidden })}>
         <div className="flex-center bg-white p-3 border-t border-gray-200">
-          <Button className="font-semibold">Add a poll</Button>
+          <Button
+            onClick={() => setIsOpenDrawer(true)}
+            className="font-semibold"
+          >
+            Add a poll
+          </Button>
         </div>
       </div>
+      <PollDrawer
+        isOpen={isOpenDrawer}
+        onClose={() => setIsOpenDrawer(false)}
+      />
     </>
   );
 };

@@ -75,9 +75,9 @@ export const Select = ({
         onClick={() => setIsExpanded(!isExpanded)}
         className={classNames(
           className,
-          "font-medium text-[15px] select-none flex items-center justify-between space-x-1.5 " +
-            "hover:text-blue-600 cursor-pointer transition-colors",
-          { "text-blue-600": isExpanded }
+          "font-medium text-sm select-none flex items-center justify-between space-x-1.5 " +
+            "hover:text-blue-700 cursor-pointer transition-colors",
+          { "text-blue-700": isExpanded }
         )}
       >
         <div className="flex items-center">

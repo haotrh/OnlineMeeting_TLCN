@@ -1,5 +1,6 @@
 import classNames from "classnames";
 import { ButtonHTMLAttributes, DetailedHTMLProps } from "react";
+import CircularLoading from "../../global/Loading/CircularLoading";
 import { ThreeDotsLoading } from "../../global/Loading/ThreeDotsLoading";
 
 export type ButtonBase =
@@ -38,11 +39,11 @@ const Button = ({
       disabled={disabled}
       type={type}
       className={classNames(className, {
-        "py-2 px-4 rounded-md text-sm": base !== "custom",
+        "py-2 px-4 rounded-md text-sm font-be": base !== "custom",
         [`${customBaseClassName}`]: base === "custom" && !disabled,
         "bg-blue-600 text-white hover:bg-blue-700 transition-colors":
           base === "primary" && !disabled,
-        "bg-lightblue text-blue-600 hover:bg-lightblue-100 transition-colors":
+        "bg-lightblue text-blue-700 hover:bg-lightblue-100 transition-colors":
           base === "light-primary" && !disabled,
         "bg-gray-100 hover:bg-gray-200 transition-colors":
           base === "light" && !disabled,
@@ -51,14 +52,13 @@ const Button = ({
         "border-2 border-red-300 text-red-500 hover:bg-red-50/70 transition-colors":
           base === "danger-outline" && !disabled,
         "bg-gray-200 cursor-not-allowed": disabled,
-        "flex-center min-w-[200px]": loading,
+        "flex-center": loading,
       })}
       {...props}
     >
       {loading ? (
         <>
-          <ThreeDotsLoading />
-          &nbsp;
+          <CircularLoading size={16} />
         </>
       ) : (
         children

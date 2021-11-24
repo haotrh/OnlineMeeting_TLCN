@@ -46,7 +46,7 @@ const RightContainer = ({ show }: { show: boolean }) => {
         ease: "easeInOut",
         duration: 0.01,
       }}
-      className="flex flex-col transition-all w-[480px] h-full bg-white"
+      className="flex flex-col transition-all w-[480px] h-full bg-white text-gray-800"
     >
       <div className="text-[14px] flex border-b space-x-1.5 border-gray-200 p-4">
         <BoxButton

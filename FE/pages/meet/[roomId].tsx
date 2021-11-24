@@ -37,6 +37,12 @@ import {
   setSpeaking,
 } from "../../lib/redux/slices/peers.slice";
 import {
+  addQuestion,
+  removeQuestion,
+  replyQuestion,
+  upvoteQuestion,
+} from "../../lib/redux/slices/questions.slice";
+import {
   addRequestPeer,
   addRequestPeers,
   clearRequestPeer,
@@ -1253,6 +1259,44 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
               const { peerId } = notification.data;
 
               dispatch(setHand({ peerId, flag: false }));
+
+              break;
+            }
+
+            case "newQuestion": {
+              const question = notification.data;
+
+              dispatch(addQuestion(question));
+
+              break;
+            }
+
+            case "upvoteQuestion": {
+              const { questionId, upvotes, isVoted } = notification.data;
+
+              dispatch(
+                upvoteQuestion({
+                  questionId,
+                  isVoted,
+                  upvotes,
+                })
+              );
+
+              break;
+            }
+
+            case "deleteQuestion": {
+              const { questionId } = notification.data;
+
+              dispatch(removeQuestion({ questionId }));
+
+              break;
+            }
+
+            case "replyQuestion": {
+              const { questionId, reply } = notification.data;
+
+              dispatch(replyQuestion({ questionId, reply }));
 
               break;
             }
