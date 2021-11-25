@@ -35,20 +35,20 @@ const MyProfile = () => {
               <label className="text-sm font-semibold block mb-2">
                 First name*
               </label>
-              <Input placeholder="First name" defaultValue={user.firstName} />
+              <Input placeholder="First name" defaultValue={user?.firstName} />
             </div>
             <div className="flex-1">
               <label className="text-sm font-semibold block mb-2">
                 Last name*
               </label>
-              <Input placeholder="Last name" defaultValue={user.lastName} />
+              <Input placeholder="Last name" defaultValue={user?.lastName} />
             </div>
           </div>
           <div>
             <label className="text-sm font-semibold block mb-2">
               Display name*
             </label>
-            <Input placeholder="Last name" defaultValue={user.displayName} />
+            <Input placeholder="Last name" defaultValue={user?.displayName} />
           </div>
           <div>
             <label className="text-sm font-semibold block mb-2">
@@ -57,7 +57,7 @@ const MyProfile = () => {
             <TextArea
               rows={6}
               placeholder="Type your bio here..."
-              defaultValue={user.bio}
+              defaultValue=""
             />
           </div>
           <div>

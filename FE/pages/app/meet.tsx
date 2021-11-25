@@ -28,7 +28,7 @@ const AppMeetPage = () => {
   const user = session.data?.user;
 
   const createdRooms = useQuery("createdRooms", () =>
-    userApi.getCreatedRooms(user.id)
+    userApi.getCreatedRooms(user?.id ?? "-1")
   );
 
   const roomOptions: OptionType[] = [
