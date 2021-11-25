@@ -990,6 +990,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
   useEffect(() => {
     socket.current = io("http://localhost:3001/", {
+      secure: true,
       withCredentials: true,
       query: {
         roomId,
@@ -1013,12 +1014,15 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
       });
     };
 
-    socket.current.on("connect", () => {
-      console.log("socket connect");
+    socket.current.on("connect", async () => {
       setSocketConnected(true);
 
-      socket.current.request("getMyRoomInfo").then((roomData) => {
-        updateRoomData(roomData);
+      console.log(socket.current.id);
+
+      socket.current.once("initialized", () => {
+        socket.current.request("getMyRoomInfo").then((roomData) => {
+          updateRoomData(roomData);
+        });
       });
     });
 

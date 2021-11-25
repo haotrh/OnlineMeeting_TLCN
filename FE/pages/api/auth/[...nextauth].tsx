@@ -62,6 +62,9 @@ export default NextAuth({
   },
   callbacks: {
     async jwt({ token, user, account }: any): Promise<any> {
+      console.log(process.env.NEXTAUTH_URL);
+      console.log(process.env.GOOGLE_ID);
+      console.log("sdwsad");
       if (user) {
         if (account?.provider === "google") {
           const { id_token } = account;
@@ -144,6 +147,7 @@ export default NextAuth({
       return token;
     },
     async session({ token, session }: { session: any; token: any }) {
+      console.log("sessioncalled");
       session.user = token.user;
       session.accessToken = token.accessToken;
 

@@ -9,7 +9,12 @@ const sequelize = new Sequelize(
     host: dbConfig.HOST,
     dialect: dbConfig.dialect,
     operatorsAliases: 0,
-
+    ssl: true,
+    dialectOptions: {
+      ssl: {
+        require: true, rejectUnauthorized: false
+      }
+    },
     pool: {
       max: dbConfig.pool.max,
       min: dbConfig.pool.min,

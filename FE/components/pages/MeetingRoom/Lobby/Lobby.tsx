@@ -1,7 +1,5 @@
 import classNames from "classnames";
-import _ from "lodash";
-import { Device } from "mediasoup-client";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext } from "react";
 import { IoMic, IoMicOff, IoVideocam, IoVideocamOff } from "react-icons/io5";
 import { useAppDispatch, useAppSelector } from "../../../../hooks/redux";
 import { PageLayout } from "../../../../layouts/PageLayout";
@@ -16,7 +14,7 @@ import { ThreeDotsLoading } from "../../../global/Loading/ThreeDotsLoading";
 export type LobbyState = "NORMAL" | "WAIT" | "REJECT";
 
 const Lobby = () => {
-  const { handleJoinRoom, socket } = useContext(RoomContext);
+  const { handleJoinRoom } = useContext(RoomContext);
 
   const { audioMuted, videoMuted } = useAppSelector(
     (selector) => selector.settings
@@ -27,16 +25,7 @@ const Lobby = () => {
 
   const dispatch = useAppDispatch();
 
-  useEffect(() => {
-    // handleCamera();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    if (!_.isEmpty(socket)) {
-      socket.on("notification", (notification) => {
-        console.log("LObby noti");
-        console.log(notification);
-      });
-    }
-  }, [socket]);
+  console.log(roomInfo);
 
   return (
     <PageLayout noFooter>
