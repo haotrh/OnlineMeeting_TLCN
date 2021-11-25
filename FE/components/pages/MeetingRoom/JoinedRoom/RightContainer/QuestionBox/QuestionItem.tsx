@@ -121,10 +121,10 @@ const QuestionItem = ({ question }: { question: Question }) => {
             </div>
           </Button>
         </div>
-        <div className="flex-1 pt-0.5">
+        <div className="flex-1 pt-0.5 min-w-0">
           {/* Question section */}
           <div className="flex group">
-            <div className="flex flex-1">
+            <div className="flex flex-1 min-w-0">
               <div className="flex-shrink-0 mr-2">
                 <Avatar
                   src={question.user.profilePic}
@@ -132,12 +132,12 @@ const QuestionItem = ({ question }: { question: Question }) => {
                   size={32}
                 />
               </div>
-              <div className="flex-1 text-sm">
+              <div className="flex-1 min-w-0 text-sm flex-col flex">
                 <div className="font-bold flex items-center space-x-2">
                   <div>{question.user.displayName}</div>
                   {authId === question.user.id && <ParticipantTag name="You" />}
                 </div>
-                <div className="font-medium whitespace-pre-wrap text-[13px]">
+                <div className="font-medium whitespace-pre-wrap text-[13px] flex-1 min-w-0 break-words w-full">
                   {question.question}
                 </div>
                 <div className="text-sm font-medium text-gray-500 mt-1">
@@ -216,7 +216,7 @@ const QuestionItem = ({ question }: { question: Question }) => {
                     onClick={() => setShowAnswerOptions(!showAnswerOptions)}
                     className="p-1"
                   >
-                    <BsThreeDotsVertical />
+                    <BsThreeDotsVertical size={16} />
                   </button>
                 </div>
               </Popover>

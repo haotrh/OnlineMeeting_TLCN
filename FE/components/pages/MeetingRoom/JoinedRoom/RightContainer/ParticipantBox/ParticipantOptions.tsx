@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import { ReactNode, useContext, useMemo, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { useAppDispatch } from "../../../../../../hooks/redux";
+import { useAppDispatch, useAppSelector } from "../../../../../../hooks/redux";
 import Popover from "../../../../../common/Popover/Popover";
 import { RoomContext } from "../../../../../contexts/RoomContext";
 
@@ -39,6 +39,8 @@ export const ParticipantOptions = ({
   const [showMenu, setShowMenu] = useState(false);
 
   const { unpinSpotlight, socket } = useContext(RoomContext);
+
+  const meHost = useAppSelector((selector) => selector.me.info.isHost);
 
   const handleMute = async () => {
     try {
@@ -108,7 +110,7 @@ export const ParticipantOptions = ({
             {!isScreenPinned ? "Pin presentation" : "Unpin presentation"}
           </ParticipantOptionsButton>
           {/* Host */}
-          {isHost && !isMe && (
+          {meHost && !isMe && (
             <>
               {/* Mute */}
               <ParticipantOptionsButton onClick={handleMute}>

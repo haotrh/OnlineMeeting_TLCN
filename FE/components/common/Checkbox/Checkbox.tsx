@@ -2,7 +2,9 @@ import classNames from "classnames";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { forwardRef, useEffect, useState } from "react";
 
-interface CheckboxProps extends React.HTMLProps<HTMLInputElement> {}
+interface CheckboxProps extends React.HTMLProps<HTMLInputElement> {
+  isCheck?: boolean;
+}
 
 const tickVariants = {
   checked: { pathLength: 1, stroke: "#4F46E5" },
@@ -18,7 +20,16 @@ const boxVariants = {
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   (
-    { className, placeholder, name, id, defaultChecked, onChange, ...props },
+    {
+      className,
+      placeholder,
+      name,
+      id,
+      defaultChecked,
+      isCheck = false,
+      onChange,
+      ...props
+    },
     ref
   ) => {
     const [isChecked, setIsChecked] = useState<boolean>(false);
@@ -28,6 +39,10 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     useEffect(() => {
       if (defaultChecked) setIsChecked(true);
     }, []);
+
+    useEffect(() => {
+      setIsChecked(isCheck);
+    }, [isCheck]);
 
     return (
       <motion.div

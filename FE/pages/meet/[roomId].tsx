@@ -37,6 +37,13 @@ import {
   setSpeaking,
 } from "../../lib/redux/slices/peers.slice";
 import {
+  addPoll,
+  addPolls,
+  closePoll,
+  openPoll,
+  removePoll,
+} from "../../lib/redux/slices/polls.slice";
+import {
   addQuestion,
   removeQuestion,
   replyQuestion,
@@ -1297,6 +1304,39 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
               const { questionId, reply } = notification.data;
 
               dispatch(replyQuestion({ questionId, reply }));
+
+              break;
+            }
+
+            case "newPoll":
+            case "votePoll": {
+              const newPoll = notification.data;
+
+              dispatch(addPoll(newPoll));
+
+              break;
+            }
+
+            case "pollClosed": {
+              const { pollId } = notification.data;
+
+              dispatch(closePoll({ pollId }));
+
+              break;
+            }
+
+            case "pollOpened": {
+              const { pollId } = notification.data;
+
+              dispatch(openPoll({ pollId }));
+
+              break;
+            }
+
+            case "deletePoll": {
+              const { pollId } = notification.data;
+
+              dispatch(removePoll({ pollId }));
 
               break;
             }

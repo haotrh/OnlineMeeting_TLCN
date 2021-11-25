@@ -30,6 +30,7 @@
     "moment": "^2.29.1",
     "next": "11.1.0",
     "next-auth": "^4.0.0-beta.4",
+    "percent-round": "^2.2.1",
     "react": "17.0.2",
     "react-autosize-textarea": "^7.1.0",
     "react-copy-to-clipboard": "^5.0.4",

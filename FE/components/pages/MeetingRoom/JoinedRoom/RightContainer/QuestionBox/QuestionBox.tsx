@@ -16,14 +16,39 @@ interface QuestionProps {
 
 type QuestionBoxState = "loading" | "error" | "loaded";
 
-type OrderByType = "timestamp" | "upvotes";
+type OrderByType =
+  | "newest"
+  | "oldest"
+  | "upvotes"
+  | "answered"
+  | "not answered";
+
+const orderByOptions = [
+  { label: "Newest", value: "newest" },
+  { label: "Oldest", value: "oldest" },
+  { label: "Upvotes", value: "upvotes" },
+  { label: "Answered", value: "answered" },
+  { label: "Not answered", value: "not answered" },
+];
+
+const optionDirection: {
+  [orderBy: string]: "asc" | "desc";
+} = {
+  newest: "desc",
+  oldest: "asc",
+  upvotes: "desc",
+  answered: "desc",
+  "not answered": "asc",
+};
 
 const QuestionBox = ({ hidden }: QuestionProps) => {
   const [questionBoxState, setQuestionBoxState] =
     useState<QuestionBoxState>("loading");
   const [isOpenModal, setIsOpenModal] = useState(false);
 
-  const [orderBy, setOrderBy] = useState<OrderByType>("timestamp");
+  const [orderBy, setOrderBy] = useState<OrderByType>("newest");
+
+  console.log(orderBy);
 
   const { socket } = useContext(RoomContext);
   const dispatch = useAppDispatch();
@@ -52,26 +77,25 @@ const QuestionBox = ({ hidden }: QuestionProps) => {
 
   return (
     <>
+      {!_.isEmpty(questions) && (
+        <div
+          className={classNames(
+            "border-b flex items-end p-4 text-sm font-semibold",
+            { hidden: hidden }
+          )}
+        >
+          <div>Order by</div>
+          <div>&nbsp;</div>
+          <Select
+            className="font-bold"
+            onChange={(v) => setOrderBy(v)}
+            options={orderByOptions}
+          />
+        </div>
+      )}
       <div
         className={classNames(
-          "border-b flex items-end p-4 text-sm font-semibold",
-          { hidden: hidden }
-        )}
-      >
-        <div>Order by</div>
-        <div>&nbsp;</div>
-        <Select
-          className="font-bold"
-          onChange={(v) => setOrderBy(v)}
-          options={[
-            { label: "Date", value: "timestamp" },
-            { label: "Upvotes", value: "upvotes" },
-          ]}
-        />
-      </div>
-      <div
-        className={classNames(
-          "flex-1 p-4 overflow-y-auto space-y-2 scrollbar1 text-gray-900",
+          "flex-1 p-4 overflow-y-auto space-y-2 scrollbar1 overflow-x-hidden text-gray-900",
           { hidden: hidden }
         )}
       >
@@ -113,11 +137,26 @@ const QuestionBox = ({ hidden }: QuestionProps) => {
             {!_.isEmpty(questions) && (
               <>
                 <div className="space-y-4">
-                  {_.orderBy(_.values(questions), [orderBy], "desc").map(
-                    (question) => (
-                      <QuestionItem key={question.id} question={question} />
-                    )
-                  )}
+                  {_.orderBy(
+                    _.values(questions),
+                    [
+                      (question) => {
+                        switch (orderBy) {
+                          case "answered":
+                          case "not answered":
+                            return !_.isEmpty(question.reply);
+                          case "newest":
+                          case "oldest":
+                            return question.timestamp;
+                          case "upvotes":
+                            return question.upvotes;
+                        }
+                      },
+                    ],
+                    optionDirection[orderBy]
+                  ).map((question) => (
+                    <QuestionItem key={question.id} question={question} />
+                  ))}
                 </div>
               </>
             )}

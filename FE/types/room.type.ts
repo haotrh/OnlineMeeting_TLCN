@@ -11,6 +11,20 @@ export interface QuestionReply {
   timestamp: number;
 }
 
+export interface PollOption {
+  option: string;
+  votes: number;
+}
+
+export interface Poll {
+  id: string;
+  question: string;
+  timestamp: number;
+  options: PollOption[];
+  voted: number | undefined;
+  isClosed: boolean;
+}
+
 export interface Question {
   id: string;
   question: string;

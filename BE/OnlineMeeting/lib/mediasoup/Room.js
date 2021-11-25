@@ -2,6 +2,8 @@ const logger = require('../../config/logger.config');
 const config = require('../../config/mediasoup.config');
 const SocketTimeoutError = require('../../utils/SocketTimeoutError');
 const Question = require('./Question');
+const Poll = require('./Poll');
+const _ = require('lodash')
 
 module.exports = class Room {
   static async create({ roomId, worker, hostId, room }) {
@@ -62,6 +64,8 @@ module.exports = class Room {
     this.audioLevelObserver = audioLevelObserver;
 
     this.questions = new Map()
+
+    this.polls = new Map()
 
     this.handleAudioLevelObserver();
   }
@@ -943,6 +947,154 @@ module.exports = class Room {
       }
 
       case 'newPoll': {
+        if (!peer.isHost) {
+          cb({ error: "You have no permission to do this" })
+          return;
+        }
+
+        const { question, options } = request.data;
+
+        if (!question || !options) {
+          cb({ error: "Invalid input" })
+          return
+        }
+
+        const newPoll = new Poll({ options, question })
+
+        this.polls.set(newPoll.id, newPoll)
+
+        for (const otherPeer of this.getJoinedPeers(peer.id)) {
+          this.notification(otherPeer.socket, "newPoll", newPoll.getInfo())
+        }
+
+        cb(newPoll.getInfo())
+
+        break;
+      }
+
+      case 'votePoll': {
+        if (!this.peers.has(peer.id)) {
+          cb({ error: "You are not in the room" })
+          return;
+        }
+
+        const { pollId, optionIndex } = request.data;
+
+        if (_.isNil(pollId) || _.isNil(optionIndex)) {
+          cb({ error: "Invalid input" })
+          return
+        }
+
+        const poll = this.polls.get(pollId)
+
+        if (!poll) {
+          cb({ error: "Poll not found!" })
+          return
+        }
+
+        poll.vote(peer.authId, optionIndex)
+
+        for (const otherPeer of this.getJoinedPeers(peer.id)) {
+          this.notification(otherPeer.socket, "votePoll", poll.getInfo(otherPeer.authId))
+        }
+
+        cb(poll.getInfo(peer.authId))
+
+        break;
+      }
+
+      case 'getPolls': {
+        if (!this.peers.has(peer.id)) {
+          cb({ error: "You are not in the room" })
+          return;
+        }
+
+        const allPolls = [...this.polls.values()].map(poll => poll.getInfo(peer.authId))
+
+        cb(allPolls)
+
+        break;
+      }
+
+      case 'getPoll': {
+        if (!this.peers.has(peer.id)) {
+          cb({ error: "You are not in the room" })
+          return;
+        }
+
+        const { pollId } = request.data;
+
+        const poll = this.polls.get(pollId)
+
+        cb(poll)
+
+        break;
+      }
+
+      case 'host:closePoll': {
+        if (peer.isHost) {
+          const { pollId } = request.data;
+
+          const poll = this.polls.get(pollId)
+
+          if (!poll) {
+            cb({ error: "Poll not found" })
+            return;
+          }
+
+          poll.isClosed = true
+
+          for (const otherPeer of this.getJoinedPeers(peer.id)) {
+            this.notification(otherPeer.socket, "pollClosed", { pollId })
+          }
+        }
+
+        cb()
+
+        break;
+      }
+
+      case 'host:openPoll': {
+        if (peer.isHost) {
+          const { pollId } = request.data;
+
+          const poll = this.polls.get(pollId)
+
+          if (!poll) {
+            cb({ error: "Poll not found" })
+            return;
+          }
+
+          poll.isClosed = false
+
+          for (const otherPeer of this.getJoinedPeers(peer.id)) {
+            this.notification(otherPeer.socket, "pollOpened", { pollId })
+          }
+        }
+
+        cb()
+
+        break;
+      }
+
+      case 'host:deletePoll': {
+        if (peer.isHost) {
+          const { pollId } = request.data;
+
+          if (!this.polls.has(pollId)) {
+            cb({ error: "Poll not found" })
+            return;
+          }
+
+          this.polls.delete(pollId)
+
+          for (const otherPeer of this.getJoinedPeers(peer.id)) {
+            this.notification(otherPeer.socket, "deletePoll", { pollId })
+          }
+        }
+
+        cb()
+
         break;
       }
 
