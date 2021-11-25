@@ -2,7 +2,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "react-query";
 import * as yup from "yup";
-import { roomApi } from "../../../../api";
+import { roomApi } from "../../../../lib/api";
 import Button from "../../../common/Button/Button";
 import Input from "../../../common/Input/Input";
 import AppDrawer, { AppDrawerProps } from "../AppDrawer/AppDrawer";

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { BiNote } from "react-icons/bi";
 import { BsFilter } from "react-icons/bs";
 import { useQuery } from "react-query";
-import { userApi } from "../../api";
+import { userApi } from "../../lib/api";
 import { OptionType, Select } from "../../components/common/Select/Select";
 import { ThreeDotsLoading } from "../../components/global/Loading/ThreeDotsLoading";
 import MeetingCard from "../../components/pages/App/Meeting/MeetingCard";

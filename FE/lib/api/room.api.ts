@@ -1,5 +1,5 @@
-import axios from "../lib/axios";
-import { CreateRoom } from "../types/room.type";
+import axios from "../axios";
+import { CreateRoom } from "../../types/room.type";
 
 export const createRoom = async (data: CreateRoom) => {
   return (await axios.post("/rooms", data)).data;
