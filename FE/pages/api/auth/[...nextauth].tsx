@@ -31,6 +31,7 @@ export default NextAuth({
       clientId: process.env.FACEBOOK_ID as string,
       clientSecret: process.env.FACEBOOK_SECRET as string,
     }),
+    //@ts-ignore
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -45,8 +46,8 @@ export default NextAuth({
           });
           const data = res.data;
           return data;
-        } catch (err) {
-          console.log(err?.response.data);
+        } catch (err: any) {
+          console.log(err?.response?.data);
           return null;
         }
       },
@@ -60,7 +61,7 @@ export default NextAuth({
     secret: process.env.JWT_SECRET as string,
   },
   callbacks: {
-    async jwt({ token, user, account }): Promise<any> {
+    async jwt({ token, user, account }: any): Promise<any> {
       if (user) {
         if (account?.provider === "google") {
           const { id_token } = account;
@@ -111,10 +112,11 @@ export default NextAuth({
           }
         }
 
+        //@ts-ignore
         return {
           user: user.user,
-          accessToken: user.tokens.access.token,
-          refreshToken: user.tokens.refresh.token,
+          accessToken: user?.tokens?.access.token,
+          refreshToken: user?.tokens?.refresh.token,
         };
       }
 
