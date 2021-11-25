@@ -5,7 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 import { JwtUtils } from "../../../utils/JwtUtils";
 
-export const refreshToken = async function (refreshToken: string) {
+const refreshToken = async function (refreshToken: string) {
   try {
     const response = await axios.post(
       "http://localhost:3001/api/auth/refresh-token",
@@ -155,6 +155,7 @@ export default NextAuth({
       return session;
     },
   },
+  debug: true,
   pages: {
     error: "http://localhost:3000/login",
   },
