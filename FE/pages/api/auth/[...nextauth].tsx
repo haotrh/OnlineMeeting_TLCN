@@ -160,6 +160,6 @@ export default NextAuth({
   },
   debug: true,
   pages: {
-    error: "http://localhost:3000/login",
+    error: "https://online-meeting-tlcn.vercel.app/login",
   },
 });
