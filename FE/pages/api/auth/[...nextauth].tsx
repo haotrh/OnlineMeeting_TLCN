@@ -65,6 +65,7 @@ export default NextAuth({
       console.log(process.env.NEXTAUTH_URL);
       console.log(process.env.GOOGLE_ID);
       console.log("sdwsad");
+      console.log("sdwsad");
       if (user) {
         if (account?.provider === "google") {
           const { id_token } = account;
