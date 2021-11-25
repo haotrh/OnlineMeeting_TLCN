@@ -102,9 +102,9 @@ const Navbar = () => {
                 content={
                   <div className="border border-gray-300 py-2 font-medium rounded-md shadow w-[200px] bg-white">
                     <div className="py-1.5 px-3">
-                      <div>{session.data?.user.displayName}</div>
+                      <div>{session?.data?.user?.displayName}</div>
                       <div className="text-[13px]">
-                        {session.data?.user.email}
+                        {session?.data?.user?.email}
                       </div>
                     </div>
                     <hr className="my-1" />
@@ -124,8 +124,8 @@ const Navbar = () => {
                   className="cursor-pointer"
                 >
                   <Avatar
-                    src={session.data?.user.profilePic}
-                    name={session.data?.user.firstName}
+                    src={session.data?.user?.profilePic}
+                    name={session.data?.user?.firstName}
                   />
                 </div>
               </Popover>
