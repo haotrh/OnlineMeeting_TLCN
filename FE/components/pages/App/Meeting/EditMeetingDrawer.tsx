@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "react-query";
-import { roomApi } from "../../../../lib/api";
+import { roomApi } from "../../../../lib/serverApi";
 import { Room } from "../../../../types/room.type";
 import Button from "../../../common/Button/Button";
 import Input from "../../../common/Input/Input";
