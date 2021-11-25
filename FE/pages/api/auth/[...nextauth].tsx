@@ -4,11 +4,12 @@ import FacebookProvider from "next-auth/providers/facebook";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 import { JwtUtils } from "../../../utils/JwtUtils";
+import urljoin from "url-join";
 
 const refreshToken = async function (refreshToken: string) {
   try {
     const response = await axios.post(
-      "http://localhost:3001/api/auth/refresh-token",
+      urljoin([process.env.BACKEND_URL as string, "api/auth/refresh-token"]),
       {
         refreshToken,
       }
@@ -40,10 +41,13 @@ export default NextAuth({
       },
       async authorize(credentials: any, req) {
         try {
-          const res = await axios.post("http://localhost:3001/api/auth/login", {
-            email: credentials.email,
-            password: credentials.password,
-          });
+          const res = await axios.post(
+            urljoin([process.env.BACKEND_URL as string, "api/auth/login"]),
+            {
+              email: credentials.email,
+              password: credentials.password,
+            }
+          );
           const data = res.data;
           return data;
         } catch (err: any) {
@@ -62,17 +66,16 @@ export default NextAuth({
   },
   callbacks: {
     async jwt({ token, user, account }: any): Promise<any> {
-      console.log(process.env.NEXTAUTH_URL);
-      console.log(process.env.GOOGLE_ID);
-      console.log("sdwsad");
-      console.log("sdwsad");
       if (user) {
         if (account?.provider === "google") {
           const { id_token } = account;
 
           try {
             const response = await axios.post(
-              "http://localhost:3001/api/auth/login-google",
+              urljoin([
+                process.env.BACKEND_URL as string,
+                "api/auth/login-google",
+              ]),
               {
                 idToken: id_token,
               }
@@ -96,7 +99,10 @@ export default NextAuth({
           const { access_token } = account;
           try {
             const response = await axios.post(
-              "http://localhost:3001/api/auth/login-facebook",
+              urljoin([
+                process.env.BACKEND_URL as string,
+                "api/auth/login-facebook",
+              ]),
               {
                 accessToken: access_token,
               }
@@ -134,8 +140,6 @@ export default NextAuth({
             refreshToken: tokens.refresh.token,
           };
 
-          console.log(token);
-
           return token;
         }
 
@@ -148,7 +152,6 @@ export default NextAuth({
       return token;
     },
     async session({ token, session }: { session: any; token: any }) {
-      console.log("sessioncalled");
       session.user = token.user;
       session.accessToken = token.accessToken;
 

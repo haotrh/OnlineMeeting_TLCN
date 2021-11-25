@@ -59,7 +59,7 @@ const Register: NextPage = () => {
     clearErrors();
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      await axios.post("http://localhost:3001/api/auth/register", {
+      await axios.post("http://52.77.251.127:4000/api/auth/register", {
         email: userData.email,
         firstName: userData.firstName,
         lastName: userData.lastName,

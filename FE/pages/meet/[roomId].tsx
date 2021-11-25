@@ -86,7 +86,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     return { redirect: { destination: "/login", permanent: false } };
 
   const room = (
-    await axios.get(`http://localhost:3001/api/rooms/${context.query.roomId}`)
+    await axios.get(`http://52.77.251.127:4000/api/rooms/${context.query.roomId}`)
   ).data;
 
   return { props: { room, token: session.accessToken } };
@@ -989,7 +989,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   };
 
   useEffect(() => {
-    socket.current = io("http://localhost:3001/", {
+    socket.current = io("http://52.77.251.127:4000/", {
       secure: true,
       withCredentials: true,
       query: {
