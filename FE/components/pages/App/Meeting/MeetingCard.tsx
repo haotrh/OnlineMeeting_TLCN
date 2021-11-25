@@ -1,15 +1,14 @@
-import { useRouter } from "next/dist/client/router";
+import Link from "next/link";
 import { useState } from "react";
 import { BiLink } from "react-icons/bi";
 import { FiEdit, FiExternalLink } from "react-icons/fi";
+import { toast } from "react-toastify";
+import urljoin from "url-join";
+import { Room } from "../../../../types/room.type";
 import Button from "../../../common/Button/Button";
 import Tooltip from "../../../common/Tooltip/Tooltip";
 import Avatar from "../../../global/Avatar/Avatar";
 import EditMeetingDrawer from "./EditMeetingDrawer";
-import Link from "next/link";
-import { Room } from "../../../../types/room.type";
-import urljoin from "url-join";
-import { toast } from "react-toastify";
 
 interface MeetingCardProps {
   user: any;

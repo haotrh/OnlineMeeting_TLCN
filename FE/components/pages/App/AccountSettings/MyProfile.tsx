@@ -1,10 +1,9 @@
-import Button from "../../../common/Button/Button";
-import Link from "next/link";
 import { useSession } from "next-auth/react";
-import Avatar from "../../../global/Avatar/Avatar";
+import { MdEdit } from "react-icons/md";
+import Button from "../../../common/Button/Button";
 import Input from "../../../common/Input/Input";
 import TextArea from "../../../common/Textarea/Textarea";
-import { MdEdit } from "react-icons/md";
+import Avatar from "../../../global/Avatar/Avatar";
 
 const MyProfile = () => {
   const session = useSession();

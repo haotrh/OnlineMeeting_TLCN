@@ -1,7 +1,5 @@
 import classNames from "classnames";
-import { ButtonHTMLAttributes, DetailedHTMLProps } from "react";
 import CircularLoading from "../../global/Loading/CircularLoading";
-import { ThreeDotsLoading } from "../../global/Loading/ThreeDotsLoading";
 
 export type ButtonBase =
   | "primary"

@@ -55,7 +55,7 @@ const EditMeetingDrawer = ({
             disabled={deleteRoomMutation.isLoading}
             loading={deleteRoomMutation.isLoading}
             onClick={() => {
-              deleteRoomMutation.mutate(room.id);
+              room.id && deleteRoomMutation.mutate(room.id);
             }}
             base="danger"
             className="font-semibold"

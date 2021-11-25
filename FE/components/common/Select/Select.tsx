@@ -1,7 +1,7 @@
 import { Placement } from "@popperjs/core";
 import classNames from "classnames";
 import _ from "lodash";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { IconType } from "react-icons";
 import { FiChevronDown } from "react-icons/fi";
 import Popover from "../Popover/Popover";
