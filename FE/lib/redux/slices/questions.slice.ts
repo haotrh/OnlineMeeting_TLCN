@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { toast } from "react-toastify";
 import { Question, QuestionReply } from "../../../types/room.type";
 
 interface QuestionState {
@@ -23,6 +24,8 @@ export const questionsSlice = createSlice({
       const question = action.payload;
 
       state[question.id] = question;
+
+      toast(`${question.user.displayName} has asked a question`);
     },
 
     upvoteQuestion: (
@@ -47,10 +50,14 @@ export const questionsSlice = createSlice({
 
       state[questionId].reply = reply;
       state[questionId].isClosed = true;
+
+      toast(`Host replied a question`);
     },
 
     removeQuestion: (state, action: PayloadAction<{ questionId: string }>) => {
       delete state[action.payload.questionId];
+
+      toast(`A question has been removed`);
     },
 
     clearQuestion: () => {

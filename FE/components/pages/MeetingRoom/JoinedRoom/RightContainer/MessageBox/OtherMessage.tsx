@@ -1,5 +1,4 @@
 /* eslint-disable @next/next/no-img-element */
-import { useAppSelector } from "../../../../../../hooks/redux";
 import { Message } from "../../../../../../lib/redux/slices/chat.slice";
 
 interface OtherMessageProps {
@@ -7,18 +6,16 @@ interface OtherMessageProps {
 }
 
 const OtherMessage = ({ messageInfo }: OtherMessageProps) => {
-  const peer = useAppSelector((selector) => selector.peers[messageInfo.peerId]);
-
   return (
     <div className="flex max-w-full mb-3">
       <div className="flex pt-1">
         <div className="w-9 h-9 rounded-full ring-white ring-[2px] overflow-hidden">
-          <img src={peer.picture} alt="avatar" />
+          <img src={messageInfo.picture} alt="avatar" />
         </div>
       </div>
       <div className="flex-grow flex-shrink-0 ml-3">
         <div className="font-bold text-gray-700 text-[14px] mb-2">
-          {peer.name}
+          {messageInfo.name}
         </div>
         <div className="text-[14px] font-medium flex flex-col space-y-[5px]">
           <div className="flex items-center">

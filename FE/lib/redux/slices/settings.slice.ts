@@ -19,13 +19,13 @@ export interface SettingsState {
 const initialState: SettingsState = {
   selectedWebcam: null,
   selectedAudioDevice: null,
-  noiseThreshold: -50,
+  noiseThreshold: -70,
   audioMuted: false,
   videoMuted: false,
   isScreenSharing: false,
   // low, medium, high, veryhigh, ultra
   resolution: "medium",
-  frameRate: 30,
+  frameRate: 15,
   screenSharingResolution: "veryhigh",
   screenSharingFrameRate: 15,
   lastN: 12,

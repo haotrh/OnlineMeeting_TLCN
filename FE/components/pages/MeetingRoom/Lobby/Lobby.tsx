@@ -11,6 +11,7 @@ import {
 } from "../../../../lib/redux/slices/settings.slice";
 import Button from "../../../common/Button/Button";
 import { RoomContext } from "../../../contexts/RoomContext";
+import CircularLoading from "../../../global/Loading/CircularLoading";
 import { ThreeDotsLoading } from "../../../global/Loading/ThreeDotsLoading";
 
 export type LobbyState = "NORMAL" | "WAIT" | "REJECT";
@@ -26,17 +27,6 @@ const Lobby = () => {
   const roomInfo = useAppSelector((selector) => selector.room);
 
   const dispatch = useAppDispatch();
-
-  useEffect(() => {
-    // handleCamera();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    if (!_.isEmpty(socket)) {
-      socket.on("notification", (notification) => {
-        console.log("LObby noti");
-        console.log(notification);
-      });
-    }
-  }, [socket]);
 
   return (
     <PageLayout noFooter>
@@ -81,7 +71,18 @@ const Lobby = () => {
                 </div>
               </div>
               <div className="w-[448px] flex-center flex-col select-none font-medium">
-                {roomState !== "requesting" && roomState !== "denied" && (
+                {roomState === "connecting" && (
+                  <>
+                    <h2 className="text-[28px] mb-3">Getting ready...</h2>
+                    <div>
+                      You&apos;ll able to join in just a moment
+                    </div>
+                    <div className="flex-center mt-4">
+                      <CircularLoading size={36} />
+                    </div>
+                  </>
+                )}
+                {roomState === "connected" && (
                   <>
                     <h2 className="text-[28px] mb-4">Ready to join?</h2>
                     <div className="mt-3">

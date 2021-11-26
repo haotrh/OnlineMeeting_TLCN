@@ -2,12 +2,15 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { PinType, Room, Spotlight } from "../../../types/room.type";
 
 type RoomStateType =
-  | "new"
+  //When initializing connection with socket or after join room and init data
   | "connecting"
+  //After "loading" in Lobby or "connecting" in Room
   | "connected"
   | "disconnected"
   | "closed"
+  //Ask to join denied
   | "denied"
+  //Ask to join waiting
   | "requesting";
 
 interface RoomState extends Room {
@@ -19,7 +22,7 @@ interface RoomState extends Room {
 }
 
 const initialState: RoomState = {
-  state: "new",
+  state: "connecting",
   inRoom: false,
   pin: null,
   activeSpeaker: null,
@@ -55,6 +58,22 @@ export const roomSlice = createSlice({
 
     setActiveSpeaker: (state, action: PayloadAction<string | null>) => {
       state.activeSpeaker = action.payload;
+    },
+
+    setRoomAllowChat: (state, action: PayloadAction<boolean>) => {
+      state.allowChat = action.payload;
+    },
+
+    setRoomAllowCamera: (state, action: PayloadAction<boolean>) => {
+      state.allowCamera = action.payload;
+    },
+
+    setRoomAllowMicrophone: (state, action: PayloadAction<boolean>) => {
+      state.allowMicrophone = action.payload;
+    },
+
+    setRoomAllowScreenshare: (state, action: PayloadAction<boolean>) => {
+      state.allowScreenShare = action.payload;
     },
 
     clearRoom: () => {

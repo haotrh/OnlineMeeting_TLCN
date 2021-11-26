@@ -1,29 +1,26 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface PeerVolumeState {
-  [peerId: string]: number;
+  [key: string]: number;
 }
 
 const initialState: PeerVolumeState = {};
 
-export const peerVolumesSlice = createSlice({
-  name: "peerVolumes",
+export const peerVolumeSlice = createSlice({
+  name: "peers",
   initialState,
   reducers: {
     setPeerVolume: (
       state,
-      action: PayloadAction<{
-        peerId: string;
-        volume: number;
-      }>
+      action: PayloadAction<{ peerId: string; volume: number }>
     ) => {
       const { peerId, volume } = action.payload;
 
-      state[peerId] = volume;
+      if (state[peerId] !== volume) state[peerId] = volume;
     },
   },
 });
 
-export const { setPeerVolume } = peerVolumesSlice.actions;
+export const { setPeerVolume } = peerVolumeSlice.actions;
 
-export default peerVolumesSlice.reducer;
+export default peerVolumeSlice.reducer;

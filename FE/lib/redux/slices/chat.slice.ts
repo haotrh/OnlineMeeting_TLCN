@@ -3,6 +3,8 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 export interface Message {
   message: string;
   peerId: string;
+  name: string;
+  picture: string;
   timestamp: string;
 }
 

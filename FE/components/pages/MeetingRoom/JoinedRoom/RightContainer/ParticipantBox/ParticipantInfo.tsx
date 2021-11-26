@@ -11,6 +11,7 @@ import { Peer, SpotlightType } from "../../../../../../types/room.type";
 import { RoomContext } from "../../../../../contexts/RoomContext";
 import { ParticipantOptions } from "./ParticipantOptions";
 import { ParticipantTag } from "./ParticipantTag";
+import ParticipantVoice from "./ParticipantVoice";
 
 const ParticipantInfo = ({
   peer,
@@ -70,15 +71,11 @@ const ParticipantInfo = ({
       </div>
       <div className="flex-1 flex justify-end space-x-4 text-lg items-center text-gray-600">
         {onMic || peer.isSpeaking ? (
-          <IoMic />
+          <ParticipantVoice peerId={peer.id} />
         ) : (
           <IoMicOff className="text-gray-400" />
         )}
-        {onWebcam ? (
-          <IoVideocam />
-        ) : (
-          <IoVideocamOff className="text-gray-400" />
-        )}
+        {!onWebcam && <IoVideocamOff className="text-gray-400" />}
         {peer.raisedHand && <IoHandLeftSharp />}
         <ParticipantOptions
           peer={peer}

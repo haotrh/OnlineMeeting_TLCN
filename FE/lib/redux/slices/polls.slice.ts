@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { toast } from "react-toastify";
 import { Poll, Question } from "../../../types/room.type";
 
 interface PollState {
@@ -31,6 +32,8 @@ export const pollsSlice = createSlice({
       if (poll) {
         poll.isClosed = true;
       }
+
+      toast("Host has closed a poll");
     },
 
     openPoll: (state, action: PayloadAction<{ pollId: string }>) => {
@@ -39,10 +42,14 @@ export const pollsSlice = createSlice({
       if (poll) {
         poll.isClosed = false;
       }
+
+      toast("Host has opened a poll");
     },
 
     removePoll: (state, action: PayloadAction<{ pollId: string }>) => {
       delete state[action.payload.pollId];
+
+      toast("A poll has been removed");
     },
 
     clearPolls: () => {

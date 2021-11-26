@@ -1,5 +1,4 @@
-import classNames from "classnames";
-import { motion, MotionStyle, TargetAndTransition } from "framer-motion";
+import { MotionStyle } from "framer-motion";
 import React, { useContext, useMemo } from "react";
 import { useAppSelector } from "../../../../../hooks/redux";
 import { SpotlightType } from "../../../../../types/room.type";

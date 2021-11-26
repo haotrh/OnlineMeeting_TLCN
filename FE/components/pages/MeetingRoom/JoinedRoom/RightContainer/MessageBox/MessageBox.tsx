@@ -2,6 +2,7 @@ import classNames from "classnames";
 import _ from "lodash";
 import { FormEvent, useContext, useEffect, useRef, useState } from "react";
 import { FaTelegramPlane } from "react-icons/fa";
+import useSound from "use-sound";
 import { useAppDispatch, useAppSelector } from "../../../../../../hooks/redux";
 import { addMessage } from "../../../../../../lib/redux/slices/chat.slice";
 import { RoomContext } from "../../../../../contexts/RoomContext";
@@ -29,7 +30,6 @@ const MessageBox = ({ hidden }: MessageBoxProps) => {
   const endMessageRef = useRef<null | HTMLDivElement>(null);
   const inputRef = useRef<null | HTMLInputElement>(null);
   const { socket } = useContext(RoomContext);
-  const dispatch = useAppDispatch();
 
   const messages = useAppSelector((selector) => selector.chat);
 
@@ -65,11 +65,11 @@ const MessageBox = ({ hidden }: MessageBoxProps) => {
         )}
       >
         <div className="text-sm font-medium">
-          {messages.map((message) =>
+          {messages.map((message, index) =>
             message.peerId === socket.id ? (
-              <MyMessage messageInfo={message} />
+              <MyMessage key={`message${index}`} messageInfo={message} />
             ) : (
-              <OtherMessage messageInfo={message} />
+              <OtherMessage key={`message${index}`} messageInfo={message} />
             )
           )}
           <div ref={endMessageRef} />

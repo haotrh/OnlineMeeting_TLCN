@@ -10,6 +10,7 @@ export const PeerAudio = ({ audioTrack }: { audioTrack: MediaStreamTrack }) => {
       stream.addTrack(audioTrack);
 
       audioRef.current.srcObject = stream;
+      audioRef.current.volume = 1.0;
     } else {
       audioRef.current.srcObject = null;
     }

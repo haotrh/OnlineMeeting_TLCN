@@ -44,6 +44,8 @@ module.exports = class Room {
 
     this.allowScreenShare = room.allowScreenShare;
 
+    this.allowQuestion = true;
+
     this.selfDestructTimeout = null;
 
     this.closed = false;
@@ -777,6 +779,11 @@ module.exports = class Room {
           return;
         }
 
+        if (!this.allowChat && peer.authId !== this.hostId) {
+          cb({ error: "You have no permission to send chat" })
+          throw new Error('No chat permission');
+        }
+
         const { message } = request.data;
 
         if (!message) {
@@ -785,7 +792,7 @@ module.exports = class Room {
         }
 
         for (const otherPeer of this.getJoinedPeers()) {
-          this.notification(otherPeer.socket, "chatMessage", { message, peerId: peer.id })
+          this.notification(otherPeer.socket, "chatMessage", { message, name: peer.name, peerId: peer.id, picture: peer.picture })
         }
 
         break;
@@ -836,6 +843,11 @@ module.exports = class Room {
         if (!this.peers.has(peer.id)) {
           cb({ error: "You are not in the room" })
           return;
+        }
+
+        if (!this.allowQuestion && peer.authId !== this.hostId) {
+          cb({ error: "You have no permission to ask question" })
+          throw new Error('No question permission');
         }
 
         const { question } = request.data;
@@ -1214,7 +1226,7 @@ module.exports = class Room {
       }
 
       case 'host:turnOnChat': {
-        this.allowScreenShare = false;
+        this.allowChat = true;
 
         for (const peer of this.getJoinedPeers()) {
           this.notification(peer.socket, "host:turnOnChat")
@@ -1224,7 +1236,7 @@ module.exports = class Room {
       }
 
       case 'host:turnOffChat': {
-        this.allowScreenShare = false;
+        this.allowChat = false;
 
         for (const peer of this.getJoinedPeers()) {
           this.notification(peer.socket, "host:turnOffChat")
@@ -1235,7 +1247,7 @@ module.exports = class Room {
       }
 
       case 'host:turnOnMicrophone': {
-        this.allowScreenShare = false;
+        this.allowMicrophone = true;
 
         for (const peer of this.getJoinedPeers()) {
           this.notification(peer.socket, "host:turnOnMicrophone")
@@ -1246,7 +1258,7 @@ module.exports = class Room {
       }
 
       case 'host:turnOffMicrophone': {
-        this.allowScreenShare = false;
+        this.allowMicrophone = false;
 
         for (const peer of this.getJoinedPeers()) {
           this.notification(peer.socket, "host:turnOffMicrophone")
@@ -1257,23 +1269,39 @@ module.exports = class Room {
       }
 
       case 'host:turnOnVideo': {
-        this.allowScreenShare = false;
+        this.allowCamera = true;
 
         for (const peer of this.getJoinedPeers()) {
           this.notification(peer.socket, "host:turnOnVideo")
         }
 
-
         break;
       }
 
       case 'host:turnOffVideo': {
-        this.allowScreenShare = false;
+        this.allowCamera = false;
 
         for (const peer of this.getJoinedPeers()) {
           this.notification(peer.socket, "host:turnOffVideo")
         }
 
+        break;
+      }
+      case 'host:turnOnQuestion': {
+        this.allowQuestion = true;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOnQuestion")
+        }
+
+        break;
+      }
+      case 'host:turnOffQuestion': {
+        this.allowQuestion = false;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOffQuestion")
+        }
 
         break;
       }

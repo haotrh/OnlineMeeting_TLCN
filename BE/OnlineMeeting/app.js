@@ -170,11 +170,12 @@ async function runSocketServer() {
     room.allPeers.set(peer.id, peer)
 
     socket.roomId = roomId;
-    socket.user = user;
 
     socket.on('request', (request, cb) => {
       room.handleSocketRequest(peer, request, cb)
     })
+
+    socket.emit("initialized")
 
     socket.on('disconnect', () => {
       if (!socket.roomId) {

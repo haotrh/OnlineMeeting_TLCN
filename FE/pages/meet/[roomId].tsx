@@ -1,5 +1,6 @@
 import { arrayMoveImmutable } from "array-move";
 import axios from "axios";
+import { Harker } from "hark";
 import _ from "lodash";
 import { Device } from "mediasoup-client";
 import { Consumer } from "mediasoup-client/lib/Consumer";
@@ -17,6 +18,7 @@ import Lobby from "../../components/pages/MeetingRoom/Lobby/Lobby";
 import { MeetingNotFound } from "../../components/pages/MeetingRoom/NotFound/NotFound";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux";
 import { addMessage } from "../../lib/redux/slices/chat.slice";
+import hark from "hark";
 import {
   setAudioDevices,
   setAudioInProgress,
@@ -38,7 +40,6 @@ import {
 } from "../../lib/redux/slices/peers.slice";
 import {
   addPoll,
-  addPolls,
   closePoll,
   openPoll,
   removePoll,
@@ -78,6 +79,8 @@ import {
   Spotlight,
 } from "../../types/room.type";
 import { RequestMethod, RoomSocket } from "../../types/socket.type";
+import { setPeerVolume } from "../../lib/redux/slices/peerVolumes.slice";
+import useSound from "use-sound";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
@@ -173,6 +176,109 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   const peerList = useRef<string[]>([]);
   const pin = useRef<PinType>(null);
   const currentSpotlights = useRef<Spotlight[]>([]);
+
+  //Local mic hark
+  const lastVolume = useRef<number>(0);
+  const harkRef = useRef<Harker | null>(null);
+  const harkStreamRef = useRef<MediaStream | null>(null);
+  const consumerHark = useRef<{
+    [consumerId: string]: {
+      hark: Harker;
+      volume: number;
+    };
+  }>({});
+
+  //Is speaking
+  const isSpeaking = useRef<boolean>(false);
+
+  //Sound effect
+  const messageAlert = useRef<HTMLAudioElement | undefined>(
+    typeof Audio !== "undefined"
+      ? new Audio("/sounds/message-alert.mp3")
+      : undefined
+  );
+  const askToJoinAlert = useRef<HTMLAudioElement | undefined>(
+    typeof Audio !== "undefined"
+      ? new Audio("/sounds/ask-to-join.wav")
+      : undefined
+  );
+  const notificationSound = useRef<HTMLAudioElement | undefined>(
+    typeof Audio !== "undefined"
+      ? new Audio("/sounds/notification-sound.mp3")
+      : undefined
+  );
+
+  const diconnectLocalHark = () => {
+    if (harkStreamRef.current !== null) {
+      let [track] = harkStreamRef.current.getAudioTracks();
+
+      track.stop();
+
+      harkStreamRef.current = null;
+    }
+
+    if (harkRef.current !== null) {
+      harkRef.current.stop();
+    }
+  };
+
+  const connectLocalHark = (track: MediaStreamTrack) => {
+    harkStreamRef.current = new MediaStream();
+
+    const newTrack = track.clone();
+
+    harkStreamRef.current.addTrack(newTrack);
+
+    newTrack.enabled = true;
+
+    harkRef.current = hark(harkStreamRef.current, {
+      play: false,
+      interval: 10,
+      history: 100,
+    });
+
+    lastVolume.current = -100;
+
+    harkRef.current.on("volume_change", (volume) => {
+      if (
+        micProducerRef.current &&
+        !micProducerRef.current.paused &&
+        Math.abs(volume - lastVolume.current) > 1
+      ) {
+        console.log("changevolume");
+        if (volume < lastVolume.current) {
+          volume =
+            lastVolume.current -
+            Math.pow(
+              (volume - lastVolume.current) / (100 + lastVolume.current),
+              2
+            ) *
+              10;
+        }
+
+        lastVolume.current = volume;
+
+        dispatch(setPeerVolume({ peerId: socket.current.id, volume }));
+      }
+    });
+
+    harkRef.current.on("speaking", () => {
+      if (
+        micProducerRef.current &&
+        micProducerRef.current.paused &&
+        isSpeaking.current
+      ) {
+        micProducerRef.current.resume();
+      }
+    });
+
+    harkRef.current.on("stopped_speaking", () => {
+      if (micProducerRef.current && !micProducerRef.current.paused) {
+        micProducerRef.current.pause();
+        dispatch(setPeerVolume({ peerId: socket.current.id, volume: 0 }));
+      }
+    });
+  };
 
   const changeMaxSpotlights = (max: number) => {
     if (max > 16) return;
@@ -704,6 +810,8 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
       if (!device) throw new Error("no audio devices");
 
       if ((restart && micProducerRef.current) || start) {
+        diconnectLocalHark();
+
         if (micProducerRef.current) await disableMic();
 
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -742,6 +850,8 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
         micProducerRef.current?.on("trackended", () => {
           disableMic();
         });
+
+        connectLocalHark(track);
       } else if (micProducerRef.current) {
         ({ track } = micProducerRef.current);
       }
@@ -752,11 +862,11 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
     }
     dispatch(setAudioInProgress({ flag: false }));
     dispatch(setAudioMuted(false));
+    isSpeaking.current = true;
   };
 
   const unmuteMic = async () => {
     if (!micProducerRef.current) {
-      console.log("updatemic");
       updateMic({ start: true });
     } else {
       micProducerRef.current.resume();
@@ -767,6 +877,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
         });
 
         dispatch(setAudioMuted(false));
+        isSpeaking.current = true;
       } catch (error) {
         console.log(error);
       }
@@ -782,6 +893,8 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
       });
 
       dispatch(setAudioMuted(true));
+      dispatch(setPeerVolume({ peerId: socket.current.id, volume: 0 }));
+      isSpeaking.current = false;
     } catch (error) {
       console.log(error);
     }
@@ -1014,16 +1127,31 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
     };
 
     socket.current.on("connect", () => {
-      console.log("socket connect");
       setSocketConnected(true);
+    });
 
+    socket.current.once("initialized", () => {
       socket.current.request("getMyRoomInfo").then((roomData) => {
         updateRoomData(roomData);
+        dispatch(setRoomState("connected"));
       });
     });
 
     socket.current.on("disconnect", (reason) => {
-      console.log("asdasd");
+      switch (reason) {
+        case "io client disconnect":
+        case "io server disconnect": {
+          close();
+          break;
+        }
+
+        case "ping timeout":
+        case "transport close":
+        case "transport error": {
+          toast("You lost your network connection. Trying to reconnect");
+          break;
+        }
+      }
     });
 
     navigator.mediaDevices.addEventListener("devicechange", async () => {
@@ -1093,6 +1221,42 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
                   })
                 );
 
+                if (kind === "audio") {
+                  consumerHark.current[id] = {
+                    hark: {} as Harker,
+                    volume: 100,
+                  };
+
+                  const stream = new MediaStream();
+
+                  stream.addTrack(consumer.track);
+
+                  if (!stream.getAudioTracks()[0]) {
+                    console.log(
+                      "request.newConsumer | given stream has no audio track"
+                    );
+                    return;
+                  }
+
+                  consumerHark.current[id].hark = hark(stream, { play: false });
+
+                  consumerHark.current[id].hark.on(
+                    "volume_change",
+                    (volume) => {
+                      volume = Math.round(volume);
+
+                      if (
+                        consumerHark.current[id] &&
+                        volume !== consumerHark.current[id].volume
+                      ) {
+                        consumerHark.current[id].volume = volume;
+
+                        dispatch(setPeerVolume({ peerId, volume }));
+                      }
+                    }
+                  );
+                }
+
                 cb(null);
               } else {
                 console.log("newConsumer: no recv transport");
@@ -1137,6 +1301,11 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
                 if (consumer.appData.source === "screen") {
                   removeScreenSpotlight(consumer.appData.peerId);
+                }
+
+                if (!_.isEmpty(consumerHark.current[consumerId])) {
+                  consumerHark.current[consumerId].hark.stop();
+                  delete consumerHark.current[consumerId];
                 }
 
                 consumer.close();
@@ -1206,7 +1375,10 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
             case "askToJoin": {
               dispatch(addRequestPeer({ peer: notification.data }));
-
+              askToJoinAlert.current &&
+                (
+                  askToJoinAlert.current.cloneNode(true) as HTMLVideoElement
+                ).play();
               break;
             }
 
@@ -1249,15 +1421,23 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
                 })
               );
 
+              messageAlert.current &&
+                (
+                  messageAlert.current.cloneNode(true) as HTMLAudioElement
+                ).play();
+
               break;
             }
 
             case "raisedHand": {
-              console.log("raisehand");
-
               const { peerId } = notification.data;
 
               dispatch(setHand({ peerId, flag: true }));
+
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
 
               break;
             }
@@ -1274,6 +1454,10 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
               const question = notification.data;
 
               dispatch(addQuestion(question));
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
 
               break;
             }
@@ -1296,6 +1480,10 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
               const { questionId } = notification.data;
 
               dispatch(removeQuestion({ questionId }));
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
 
               break;
             }
@@ -1304,11 +1492,29 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
               const { questionId, reply } = notification.data;
 
               dispatch(replyQuestion({ questionId, reply }));
+              
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
 
               break;
             }
 
-            case "newPoll":
+            case "newPoll": {
+              const newPoll = notification.data;
+
+              dispatch(addPoll(newPoll));
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
+
+              toast("Host has created a new poll");
+
+              break;
+            }
+
             case "votePoll": {
               const newPoll = notification.data;
 
@@ -1319,6 +1525,10 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
             case "pollClosed": {
               const { pollId } = notification.data;
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
 
               dispatch(closePoll({ pollId }));
 
@@ -1327,6 +1537,10 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
             case "pollOpened": {
               const { pollId } = notification.data;
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
 
               dispatch(openPoll({ pollId }));
 
@@ -1335,6 +1549,10 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
             case "deletePoll": {
               const { pollId } = notification.data;
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
 
               dispatch(removePoll({ pollId }));
 
@@ -1343,16 +1561,35 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
             case "host:mute": {
               muteMic();
+
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
+
+              toast("You have been muted by the host");
               break;
             }
 
             case "host:stopVideo": {
               disableWebcam();
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
+
+              toast("You have been stopped webcam by the host");
               break;
             }
 
             case "host:stopScreenSharing": {
               disableScreenSharing();
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
+
+              toast("You have been stopped screensharing by the host");
               break;
             }
 
@@ -1360,12 +1597,40 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
               await socket.current.request("lowerHand");
 
               dispatch(setRaiseHand(false));
+
+              notificationSound.current &&
+                (
+                  notificationSound.current.cloneNode(true) as HTMLAudioElement
+                ).play();
+
+              toast("You have been lowered hand by the host");
               break;
             }
 
             case "host:kick": {
               close();
               break;
+            }
+
+            case "host:turnOnScreenSharing": {
+            }
+            case "host:turnOffScreenSharing": {
+            }
+            case "host:turnOnChat": {
+            }
+            case "host:turnOffChat": {
+            }
+            case "host:turnOnMicrophone": {
+            }
+            case "host:turnOffMicrophone": {
+            }
+            case "host:turnOnVideo": {
+            }
+            case "host:turnOffVideo": {
+            }
+            case "host:turnOnQuestion": {
+            }
+            case "host:turnOffQuestion": {
             }
 
             default: {

@@ -24,7 +24,9 @@
     "@types/yup": "^0.29.13",
     "array-move": "^4.0.0",
     "classnames": "^2.3.1",
+    "file-loader": "^6.2.0",
     "framer-motion": "^4.1.17",
+    "hark": "^1.2.3",
     "jsonwebtoken": "^8.5.1",
     "mediasoup-client": "^3.6.42",
     "moment": "^2.29.1",
@@ -47,6 +49,7 @@
     "slick-carousel": "^1.8.1",
     "socket.io-client": "^4.3.2",
     "url-join": "^4.0.1",
+    "use-sound": "^4.0.1",
     "yup": "^0.32.11"
   },
   "devDependencies": {
