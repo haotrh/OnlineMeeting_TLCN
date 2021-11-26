@@ -33,8 +33,6 @@ const QuestionModal = ({ isOpen, onClose }: QuestionModalProps) => {
         question: question.trim(),
       });
 
-      console.log(newQuestion);
-
       dispatch(addQuestion(newQuestion));
 
       onClose();

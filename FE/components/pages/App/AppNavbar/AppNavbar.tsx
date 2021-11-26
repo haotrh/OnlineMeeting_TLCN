@@ -2,6 +2,7 @@ import { useRouter } from "next/dist/client/router";
 import { IoCalendarClear } from "react-icons/io5";
 import { MdPeople } from "react-icons/md";
 import Tooltip from "../../../common/Tooltip/Tooltip";
+import Logo from "../../../global/Logo/Logo";
 import AccountMenu from "./AccountMenu";
 import AppNavbarLink from "./AppNavbarLink";
 
@@ -24,11 +25,9 @@ const AppNavbar = () => {
   return (
     <div className="w-16 border-r self-start flex flex-col justify-between items-center h-screen sticky top-0">
       <div className="pt-3 space-y-6">
-        <img
-          alt="logo"
-          className="w-10 h-10 object-contain"
-          src="https://us04st1.zoom.us/static/5.2.2682/image/new/ZoomLogo.png"
-        />
+        <div className="py-1">
+          <Logo size={36} />
+        </div>
         {routes.map((route, i) => (
           <Tooltip
             key={`appnavbar${(route.href, i)}`}

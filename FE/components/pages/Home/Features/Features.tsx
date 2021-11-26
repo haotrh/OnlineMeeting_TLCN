@@ -5,7 +5,7 @@ const Features = () => {
   return (
     <>
       <div className="text-darkblue mt-10 mb-16 font-semibold text-2xl max-w-[300px] leading-9 text-center">
-        Google Meet Features
+        OMeeting Features
       </div>
       <Slider
         dots={true}

@@ -12,6 +12,10 @@
   font-style: normal;
 }
 
+.ReactCollapse--collapse {
+  transition: height 500ms;
+}
+
 :root {
   --gray: rgb(229, 231, 235);
 }
@@ -136,7 +140,7 @@ input {
 
 .dot-between > *:after {
   content: "\2022";
-  @apply mx-1
+  @apply mx-1;
 }
 
 .dot-between > *:last-child:after {

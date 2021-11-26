@@ -7,6 +7,7 @@ import useScrollDirection, {
 } from "../../../hooks/useScrollDirection";
 import Popover from "../../common/Popover/Popover";
 import Avatar from "../Avatar/Avatar";
+import Logo from "../Logo/Logo";
 
 enum NavbarState {
   TOP = "top",
@@ -62,12 +63,9 @@ const Navbar = () => {
     >
       <div className="max-w-7xl w-full flex justify-between items-center relative">
         <Link href="/">
-          <a className="cursor-pointer">
-            <img
-              alt="Logo"
-              className="max-h-[20px] cursor-pointer"
-              src="https://st1.zoom.us/static/5.2.2562/image/new/ZoomLogo.png"
-            />
+          <a className="cursor-pointer flex items-center select-none">
+            <Logo className="max-h-[60px]" />
+            <span className="font-poppins font-semibold text-sm">OMEETING</span>
           </a>
         </Link>
         <div className="flex items-center space-x-6 text-sm font-poppins font-semibold">

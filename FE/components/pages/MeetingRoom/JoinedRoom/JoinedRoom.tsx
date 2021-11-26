@@ -11,6 +11,7 @@ import { MainScreen } from "./MainScreen/MainScreen";
 import { AudioPeers } from "./PeerAudio/AudioPeers";
 import RightContainer from "./RightContainer/RightContainer";
 import Link from "next/link";
+import Logo from "../../../global/Logo/Logo";
 
 export type MediaType = "audio" | "video" | "screen";
 
@@ -39,12 +40,8 @@ const JoinedRoom = () => {
             >
               <div className="h-[40px] mb-2 flex justify-between items-center">
                 <div className="flex space-x-3 items-center">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-white flex-center">
-                    <img
-                      className="w-full h-full object-contain"
-                      alt="logo"
-                      src="https://st1.zoom.us/static/5.2.2562/image/new/ZoomLogo.png"
-                    />
+                  <div className="bg-white p-1.5 rounded-full overflow-hidden shadow-inner flex-shrink-0">
+                    <Logo size={32} />
                   </div>
                   <div className="font-semibold">{roomInfo.name}</div>
                 </div>

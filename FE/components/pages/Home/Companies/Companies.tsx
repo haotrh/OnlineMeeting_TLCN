@@ -8,7 +8,7 @@ const Companies = () => {
   return (
     <div className="w-full rounded-2xl py-16 mb-10 from-blue-100/40 to-blue-200/40 via-blue-100/10 bg-gradient-to-r company-background">
       <h3 className="text-xl text-darkblue font-semibold text-center mb-8">
-        Leading companies trust Google Meet
+        Leading companies trust OMeeting
       </h3>
       <div className="flex flex-wrap mx-10 justify-center items-center">
         <Logo src="https://lh3.googleusercontent.com/RSIzwnc3dyd4CYkE7QboQEb75IGjhFsUEI8xuczKfJReqLwKc0_7Zohjuse8G7y7ytG1IQ7HtbgxJMGWN9QaioHHP7VJxpjbmI1r=rwu-v1-w1400" />

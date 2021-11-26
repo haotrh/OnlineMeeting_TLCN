@@ -48,8 +48,6 @@ const QuestionBox = ({ hidden }: QuestionProps) => {
 
   const [orderBy, setOrderBy] = useState<OrderByType>("newest");
 
-  console.log(orderBy);
-
   const { socket } = useContext(RoomContext);
   const dispatch = useAppDispatch();
 
