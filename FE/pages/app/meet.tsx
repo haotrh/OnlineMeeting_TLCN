@@ -18,6 +18,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!session) {
     return { redirect: { destination: "/", permanent: false } };
   }
+
+  console.log(session.user);
+
+  if (!session.user.isVerified)
+    return { redirect: { destination: "/verify-request", permanent: false } };
+
   return { props: { session } };
 };
 
@@ -62,7 +68,9 @@ const AppMeetPage = () => {
         <>
           {_.isEmpty(createdRooms.data) ? (
             <div className="py-10 text-center font-semibold">
-              <BiNote className="mx-auto" size={40} />
+              <div className="select-none flex-center">
+                <img src="/box-error.png" className="h-40" alt="icon" />
+              </div>
               Your meeting rooms list is empty!
             </div>
           ) : (

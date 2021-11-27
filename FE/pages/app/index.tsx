@@ -6,6 +6,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!session) {
     return { redirect: { destination: "/", permanent: false } };
   }
+
+  if (!session.user.isVerified)
+    return { redirect: { destination: "/verify-request", permanent: false } };
+
   return { redirect: { destination: "/app/meet", permanent: false } };
 };
 

@@ -49,7 +49,7 @@ const Button = ({
           base === "danger" && !disabled,
         "border-2 border-red-300 text-red-500 hover:bg-red-50/70 transition-colors":
           base === "danger-outline" && !disabled,
-        "bg-gray-200 cursor-not-allowed": disabled,
+        "bg-gray-200 cursor-default": disabled,
         "flex-center": loading,
       })}
       {...props}

@@ -5,6 +5,7 @@ import Tooltip from "../../../common/Tooltip/Tooltip";
 import Logo from "../../../global/Logo/Logo";
 import AccountMenu from "./AccountMenu";
 import AppNavbarLink from "./AppNavbarLink";
+import Link from "next/link";
 
 export const routes = [
   {
@@ -26,7 +27,11 @@ const AppNavbar = () => {
     <div className="w-16 border-r self-start flex flex-col justify-between items-center h-screen sticky top-0">
       <div className="pt-3 space-y-6">
         <div className="py-1">
-          <Logo size={36} />
+          <Link href="/">
+            <a>
+              <Logo size={36} />
+            </a>
+          </Link>
         </div>
         {routes.map((route, i) => (
           <Tooltip

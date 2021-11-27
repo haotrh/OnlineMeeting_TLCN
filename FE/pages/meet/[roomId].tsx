@@ -96,6 +96,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!session)
     return { redirect: { destination: "/login", permanent: false } };
 
+  if (!session.user.isVerified)
+    return { redirect: { destination: "/verify-request", permanent: false } };
+
   const room = (
     await axios.get(
       urljoin(config.backendUrl, `api/rooms/${context.query.roomId}`)

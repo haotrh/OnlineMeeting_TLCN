@@ -55,6 +55,12 @@ const verifyEmail = {
     }),
 }
 
+const sendVerifyEmail = {
+    body: Joi.object().keys({
+        email: Joi.string().email(),
+    }),
+}
+
 module.exports = {
-    register, login, refreshToken, verifyEmail, forgotPassword, resetPassword, loginWithGoogle, loginWithFacebook
+    sendVerifyEmail, register, login, refreshToken, verifyEmail, forgotPassword, resetPassword, loginWithGoogle, loginWithFacebook
 }
