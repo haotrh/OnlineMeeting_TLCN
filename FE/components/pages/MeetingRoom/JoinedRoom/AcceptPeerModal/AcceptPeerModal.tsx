@@ -2,7 +2,6 @@ import _ from "lodash";
 import { useContext } from "react";
 import { useAppDispatch, useAppSelector } from "../../../../../hooks/redux";
 import {
-  addRequestPeers,
   clearRequestPeer,
   removeRequestPeer,
 } from "../../../../../lib/redux/slices/requestPeers.slice";
@@ -46,20 +45,6 @@ export const AcceptPeerModal = () => {
         Someone wants to join this meeting
       </h2>
       <div className="mb-3 space-y-3">
-        {_.values(requestPeers).map((peer) => (
-          <div className="flex items-center" key={`requestPeer${peer.id}`}>
-            <div>
-              <img
-                className="w-8 h-8 rounded-full mr-2"
-                src={peer.picture}
-                alt="avatar"
-              />
-            </div>
-            <div className="text-sm text-gray-600 font-semibold">
-              {peer.name}
-            </div>
-          </div>
-        ))}
         {_.values(requestPeers).map((peer) => (
           <div className="flex items-center" key={`requestPeer${peer.id}`}>
             <div>

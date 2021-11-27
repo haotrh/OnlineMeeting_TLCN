@@ -95,7 +95,8 @@ export const peersSlice = createSlice({
       state,
       action: PayloadAction<{ peerId: string; flag: boolean }>
     ) => {
-      state[action.payload.peerId].isSpeaking = action.payload.flag;
+      if (state[action.payload.peerId])
+        state[action.payload.peerId].isSpeaking = action.payload.flag;
     },
 
     setHand: (

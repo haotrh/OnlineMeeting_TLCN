@@ -9,7 +9,9 @@ import * as yup from "yup";
 import Button from "../components/common/Button/Button";
 import Checkbox from "../components/common/Checkbox/Checkbox";
 import FloatingInput from "../components/common/Input/FloatingInput";
-import urlJoin from "url-join";
+import Logo from "../components/global/Logo/Logo";
+import LoginWithFacebookButton from "../components/pages/Auth/LoginWithFacebookButton";
+import LoginWithGoogleButton from "../components/pages/Auth/LoginWithGoogleButton";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
@@ -81,14 +83,16 @@ const Login: NextPage = ({ error }: any) => {
   }, []);
 
   return (
-    <div className="p-7 flex w-screen h-screen space-x-10">
+    <div className="flex w-screen h-screen space-x-10">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-4/12 flex-shrink-0 p-10 pt-16"
+        className="w-5/12 flex-shrink-0 p-20 pt-16"
       >
         <div>
           <Link href="/">
-            <a className="mb-4 block">LOGO</a>
+            <a className="mb-4 block">
+              <Logo />
+            </a>
           </Link>
           <div className="text-3xl font-black text-darkblue font-be">
             Hello,{" "}
@@ -130,6 +134,7 @@ const Login: NextPage = ({ error }: any) => {
         </div>
         <div>
           <Button
+            type="submit"
             disabled={isSubmitting}
             loading={isSubmitting}
             base="custom"
@@ -150,56 +155,16 @@ const Login: NextPage = ({ error }: any) => {
           <div className="text-sm font-semibold text-gray-600 mx-4">OR</div>
           <div className="flex-1 bg-gray-200 h-px"></div>
         </div>
-        <div className="flex space-x-6 text-[13px] text-indigo-700">
-          <button
-            type="button"
-            onClick={() => {
-              signIn("google", {
-                callbackUrl: router.query.redirect
-                  ? urlJoin(
-                      "http://localhost:3000",
-                      router.query.redirect as string
-                    )
-                  : "/app",
-              });
-            }}
-            className="flex-1 border p-2 rounded-md font-semibold flex justify-center items-center hover:bg-gray-50 transition-colors"
-          >
-            <img
-              alt="Google"
-              className="w-6 h-6 object-contain mr-3"
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/1200px-Google_%22G%22_Logo.svg.png"
-            />
-            Login with Google
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              signIn("facebook", {
-                callbackUrl: router.query.redirect
-                  ? urlJoin(
-                      "http://localhost:3000",
-                      router.query.redirect as string
-                    )
-                  : "/app",
-              })
-            }
-            className="flex-1 border p-2 rounded-md font-semibold flex justify-center items-center hover:bg-gray-50 transition-colors"
-          >
-            <img
-              alt="Facebook"
-              className="w-6 h-6 object-contain mr-3"
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/1200px-Facebook_Logo_%282019%29.png"
-            />
-            Login with Facebook
-          </button>
+        <div className="flex space-x-6">
+          <LoginWithGoogleButton />
+          <LoginWithFacebookButton />
         </div>
       </form>
-      <div className="flex-1">
+      <div className="flex-1 bg-[#F7F6F9] flex-center select-none">
         <img
           alt="background"
-          className="w-full h-full object-contain"
-          src="https://image.freepik.com/free-vector/sign-page-abstract-concept-illustration_335657-2242.jpg"
+          className="w-full"
+          src="/login.png"
         />
       </div>
     </div>

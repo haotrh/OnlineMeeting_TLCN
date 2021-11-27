@@ -40,6 +40,8 @@ const Control = () => {
   const { audioInProgress, webcamInProgress, screenShareInProgress } =
     useAppSelector((selector) => selector.me);
 
+  const room = useAppSelector((selector) => selector.room);
+
   const dispatch = useAppDispatch();
 
   const onRaiseHand = async () => {
@@ -68,8 +70,11 @@ const Control = () => {
             else updateWebcam({ start: true });
           }}
           on={!videoMuted}
-          tooltip={{ content: "Camera", singleton: target }}
-          preventClick={webcamInProgress}
+          tooltip={{
+            content: "Camera",
+            singleton: target,
+          }}
+          preventClick={webcamInProgress || (!room.allowCamera && !room.isHost)}
         >
           {!videoMuted ? <IoVideocam /> : <IoVideocamOff />}
         </ControlButton>
@@ -79,18 +84,25 @@ const Control = () => {
             else muteMic();
           }}
           on={!audioMuted}
-          tooltip={{ content: "Microphone", singleton: target }}
-          preventClick={audioInProgress}
+          tooltip={{
+            content: "Microphone",
+            singleton: target,
+          }}
+          preventClick={
+            audioInProgress || (!room.allowMicrophone && !room.isHost)
+          }
         >
           {!audioMuted ? <IoMic /> : <IoMicOff />}
         </ControlButton>
-        <ControlButton
-          onClick={onRaiseHand}
-          on={raisedHand}
-          tooltip={{ content: "Raise hand", singleton: target }}
-        >
-          {raisedHand ? <IoHandLeftSharp /> : <IoHandLeftOutline />}
-        </ControlButton>
+        {room.allowRaiseHand && (
+          <ControlButton
+            onClick={onRaiseHand}
+            on={raisedHand}
+            tooltip={{ content: "Raise hand", singleton: target }}
+          >
+            {raisedHand ? <IoHandLeftSharp /> : <IoHandLeftOutline />}
+          </ControlButton>
+        )}
         <Tooltip content="Leave the room" singleton={target}>
           <button
             onClick={() => {
@@ -107,8 +119,13 @@ const Control = () => {
             else disableScreenSharing();
           }}
           on={isScreenSharing}
-          preventClick={screenShareInProgress}
-          tooltip={{ content: "Screen share", singleton: target }}
+          preventClick={
+            screenShareInProgress || (!room.allowScreenShare && !room.isHost)
+          }
+          tooltip={{
+            content: "Screen share",
+            singleton: target,
+          }}
         >
           <MdStopScreenShare size={20} />
         </ControlButton>

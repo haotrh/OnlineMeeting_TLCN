@@ -33,7 +33,7 @@ const AccountMenu = () => {
       content={
         <div
           onClick={() => setToggle(false)}
-          className="py-2.5 px-3 text-[15px] font-medium w-[240px] p-2 shadow-md rounded-xl bg-white"
+          className="py-2.5 px-3 text-[15px] font-medium min-w-[240px] p-2 shadow-md rounded-xl bg-white"
         >
           <div>
             <div>

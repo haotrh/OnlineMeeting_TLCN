@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import _ from "lodash";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../../../../../hooks/redux";
 import { addQuestions } from "../../../../../../lib/redux/slices/questions.slice";
 import Button from "../../../../../common/Button/Button";
@@ -52,6 +52,16 @@ const QuestionBox = ({ hidden }: QuestionProps) => {
   const dispatch = useAppDispatch();
 
   const questions = useAppSelector((selector) => selector.questions);
+
+  const allowQuestion = useAppSelector(
+    (selector) => selector.room.allowQuestion
+  );
+
+  const isHost = useAppSelector((selector) => selector.room.isHost);
+
+  const havePermission = useMemo(() => {
+    return allowQuestion || (!allowQuestion && isHost);
+  }, [allowQuestion, isHost]);
 
   const getQuestions = async () => {
     try {
@@ -164,6 +174,7 @@ const QuestionBox = ({ hidden }: QuestionProps) => {
       <div className={classNames({ hidden })}>
         <div className="flex-center bg-white p-3 border-t border-gray-200">
           <Button
+            disabled={!havePermission}
             onClick={() => setIsOpenModal(true)}
             className="font-semibold"
           >
@@ -172,7 +183,7 @@ const QuestionBox = ({ hidden }: QuestionProps) => {
         </div>
       </div>
       <QuestionModal
-        isOpen={isOpenModal}
+        isOpen={Boolean(isOpenModal && havePermission)}
         onClose={() => setIsOpenModal(false)}
       />
     </>

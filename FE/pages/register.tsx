@@ -7,6 +7,12 @@ import Button from "../components/common/Button/Button";
 import FloatingInput from "../components/common/Input/FloatingInput";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
+import LoginWithFacebookButton from "../components/pages/Auth/LoginWithFacebookButton";
+import LoginWithGoogleButton from "../components/pages/Auth/LoginWithGoogleButton";
+import Logo from "../components/global/Logo/Logo";
+import urljoin from "url-join";
+import { config } from "../utils/config";
+import { useState } from "react";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
@@ -52,6 +58,8 @@ const Register: NextPage = () => {
     resolver: yupResolver(registerSchema),
   });
 
+  const [isSuccess, setIsSuccess] = useState(false);
+
   const onSubmit = async (userData: any) => {
     if (isSubmitting) {
       return;
@@ -59,16 +67,13 @@ const Register: NextPage = () => {
     clearErrors();
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      await axios.post("http://localhost:3001/api/auth/register", {
+      await axios.post(urljoin(config.backendUrl, "api/auth/register"), {
         email: userData.email,
         firstName: userData.firstName,
         lastName: userData.lastName,
         password: userData.password,
       });
-      await signIn("credentials", {
-        email: userData.email,
-        password: userData.password,
-      });
+      setIsSuccess(true);
     } catch (err: any) {
       console.log(err.response.data.message);
       setError("email", { message: err.response.data.message });
@@ -76,111 +81,121 @@ const Register: NextPage = () => {
   };
 
   return (
-    <div className="p-7 flex w-screen h-screen space-x-10">
-      <div className="flex-1">
+    <div className="flex w-screen h-screen space-x-10">
+      <div className="flex-1 bg-[#F7F6F9] flex-center">
         <img
           alt="background"
-          className="w-full h-full object-contain"
-          src="https://image.freepik.com/free-vector/sign-page-abstract-concept-illustration_335657-2242.jpg"
+          className="w-[90%] object-contain"
+          src="/register.png"
         />
       </div>
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-[36%] flex-shrink-0 flex flex-col justify-between p-8"
+        className="w-5/12 flex-shrink-0 flex flex-col justify-between p-20"
       >
         <div>
           <Link href="/">
-            <a className="mb-4 block">LOGO</a>
+            <a className="mb-4 block">
+              <Logo />
+            </a>
           </Link>
-          <div className="text-3xl font-black text-gray-700 font-be">
-            Register
-          </div>
         </div>
-        <div className="my-8 space-y-8 text-sm">
-          <div className="flex space-x-5">
-            <div className="flex-1">
+        {!isSuccess ? (
+          <div>
+            <div className="text-3xl font-black text-gray-700 font-be">
+              Register
+            </div>
+            <div className="my-8 space-y-8 text-sm">
+              <div className="flex space-x-5">
+                <div className="flex-1">
+                  <FloatingInput
+                    error={errors?.firstName?.message}
+                    {...register("firstName")}
+                    placeholder="Firstname"
+                  />
+                </div>
+                <div className="flex-1">
+                  <FloatingInput
+                    error={errors?.lastName?.message}
+                    {...register("lastName")}
+                    placeholder="Lastname"
+                  />
+                </div>
+              </div>
               <FloatingInput
-                error={errors?.firstName?.message}
-                {...register("firstName")}
-                placeholder="Firstname"
+                {...register("email")}
+                error={errors?.email?.message}
+                placeholder="Email"
+              />
+              <FloatingInput
+                {...register("password")}
+                error={errors?.password?.message}
+                placeholder="Password"
+                type="password"
+              />
+              <FloatingInput
+                {...register("confirmPassword")}
+                error={errors?.confirmPassword?.message}
+                placeholder="Confirm password"
+                type="password"
               />
             </div>
+            <div>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                loading={isSubmitting}
+                base="custom"
+                customBaseClassName="bg-gradient-to-r from-blue-300 via-indigo-400 to-purple-500 text-white"
+                className="flex-center w-full font-semibold text-xl py-3 rounded-xl mb-4 font-poppins"
+              >
+                Register
+              </Button>
+              <div className="text-center text-sm font-medium text-darkblue">
+                Already have an account?{" "}
+                <Link href="/login">
+                  <a className="text-blue-700 font-bold">Login</a>
+                </Link>
+              </div>
+            </div>
+            <div className="flex items-center my-7">
+              <div className="flex-1 bg-gray-200 h-px"></div>
+              <div className="font-poppins text-sm font-semibold text-gray-600 mx-4">
+                OR
+              </div>
+              <div className="flex-1 bg-gray-200 h-px"></div>
+            </div>
             <div className="flex-1">
-              <FloatingInput
-                error={errors?.lastName?.message}
-                {...register("lastName")}
-                placeholder="Lastname"
-              />
+              <div className="flex space-x-6">
+                <LoginWithGoogleButton />
+                <LoginWithFacebookButton />
+              </div>
             </div>
           </div>
-          <FloatingInput
-            {...register("email")}
-            error={errors?.email?.message}
-            placeholder="Email"
-          />
-          <FloatingInput
-            {...register("password")}
-            error={errors?.password?.message}
-            placeholder="Password"
-            type="password"
-          />
-          <FloatingInput
-            {...register("confirmPassword")}
-            error={errors?.confirmPassword?.message}
-            placeholder="Confirm password"
-            type="password"
-          />
-        </div>
-        <div>
-          <Button
-            disabled={isSubmitting}
-            loading={isSubmitting}
-            base="custom"
-            customBaseClassName="bg-gradient-to-r from-blue-300 via-indigo-400 to-purple-500 text-white"
-            className="flex-center w-full font-semibold text-xl py-3 rounded-xl mb-4 font-poppins"
-          >
-            Register
-          </Button>
-          <div className="text-center text-sm font-medium text-darkblue">
-            Already have an account?{" "}
+        ) : (
+          <div className="flex-1 mt-10">
+            <div className="text-3xl font-black text-gray-700 font-be text-center">
+              Registered successfully!
+            </div>
+            <div className="text-center mt-3 font-medium font-poppins text-sm text-gray-600">
+              Please check your email to verify your account. In order to start
+              using our services, you need to confirm your email address.
+            </div>
+            <div className="select-none">
+              <img src="/success.png" alt="Email icon" />
+            </div>
             <Link href="/login">
-              <a className="text-blue-700 font-bold">Login</a>
+              <a className="flex-center">
+                <Button
+                  base="light-primary"
+                  className="w-full font-semibold text-[15px] max-w-[320px]"
+                >
+                  Click here to login
+                </Button>
+              </a>
             </Link>
           </div>
-        </div>
-        <div className="flex items-center my-7">
-          <div className="flex-1 bg-gray-200 h-px"></div>
-          <div className="font-poppins text-sm font-semibold text-gray-600 mx-4">
-            OR
-          </div>
-          <div className="flex-1 bg-gray-200 h-px"></div>
-        </div>
-        <div className="flex-1">
-          <div className="flex space-x-6 text-[13px] font-poppins">
-            <button
-              type="button"
-              className="flex-1 border p-2 rounded-md font-semibold flex justify-center items-center"
-            >
-              <img
-                alt="Google logo"
-                className="w-6 h-6 object-contain mr-3"
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/1200px-Google_%22G%22_Logo.svg.png"
-              />
-              Login with Google
-            </button>
-            <button
-              type="button"
-              className="flex-1 border p-2 rounded-md font-semibold flex justify-center items-center"
-            >
-              <img
-                alt="Facebook logo"
-                className="w-6 h-6 object-contain mr-3"
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/1200px-Facebook_Logo_%282019%29.png"
-              />
-              Login with Facebook
-            </button>
-          </div>
-        </div>
+        )}
       </form>
     </div>
   );

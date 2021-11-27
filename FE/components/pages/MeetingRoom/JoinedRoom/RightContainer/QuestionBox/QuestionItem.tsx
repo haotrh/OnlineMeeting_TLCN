@@ -189,37 +189,40 @@ const QuestionItem = ({ question }: { question: Question }) => {
                 </div>
                 <div>{question.reply.answer}</div>
               </div>
-              <Popover
-                onClickOutside={() => setShowAnswerOptions(false)}
-                interactive={true}
-                visible={showAnswerOptions}
-                placement="bottom-start"
-                offset={[0, 0]}
-                content={
-                  <div onClick={() => setShowAnswerOptions(false)}>
-                    <button
-                      onClick={() => {
-                        setAnswer(question.reply.answer);
-                        setIsAnswer(true);
-                      }}
-                      className="bg-white py-1 px-2 shadow-md border rounded text-sm font-semibold cursor-pointer
+              {/* Host option to answer */}
+              {isHost && (
+                <Popover
+                  onClickOutside={() => setShowAnswerOptions(false)}
+                  interactive={true}
+                  visible={showAnswerOptions}
+                  placement="bottom-start"
+                  offset={[0, 0]}
+                  content={
+                    <div onClick={() => setShowAnswerOptions(false)}>
+                      <button
+                        onClick={() => {
+                          setAnswer(question.reply.answer);
+                          setIsAnswer(true);
+                        }}
+                        className="bg-white py-1 px-2 shadow-md border rounded text-sm font-semibold cursor-pointer
                   hover:bg-blue-50 hover:text-blue-700 transition-all flex items-center"
+                      >
+                        <FiEdit className="mr-2" />
+                        <div>Edit answer</div>
+                      </button>
+                    </div>
+                  }
+                >
+                  <div className="group-hover:opacity-100 opacity-0 transition-all">
+                    <button
+                      onClick={() => setShowAnswerOptions(!showAnswerOptions)}
+                      className="p-1"
                     >
-                      <FiEdit className="mr-2" />
-                      <div>Edit answer</div>
+                      <BsThreeDotsVertical size={16} />
                     </button>
                   </div>
-                }
-              >
-                <div className="group-hover:opacity-100 opacity-0 transition-all">
-                  <button
-                    onClick={() => setShowAnswerOptions(!showAnswerOptions)}
-                    className="p-1"
-                  >
-                    <BsThreeDotsVertical size={16} />
-                  </button>
-                </div>
-              </Popover>
+                </Popover>
+              )}
             </div>
           )}
           {/* Host answer section */}

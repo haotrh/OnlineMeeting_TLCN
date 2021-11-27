@@ -60,6 +60,12 @@ import {
   setActiveSpeaker,
   setInRoom,
   setPin,
+  setRoomAllowCamera,
+  setRoomAllowChat,
+  setRoomAllowMicrophone,
+  setRoomAllowQuestion,
+  setRoomAllowRaiseHand,
+  setRoomAllowScreenshare,
   setRoomInfo,
   setRoomState,
   setSpotlights,
@@ -75,12 +81,14 @@ import {
 import {
   Peer,
   PinType,
+  Room,
   RoomPermission,
   Spotlight,
 } from "../../types/room.type";
 import { RequestMethod, RoomSocket } from "../../types/socket.type";
 import { setPeerVolume } from "../../lib/redux/slices/peerVolumes.slice";
-import useSound from "use-sound";
+import urljoin from "url-join";
+import { config } from "../../utils/config";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
@@ -89,7 +97,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     return { redirect: { destination: "/login", permanent: false } };
 
   const room = (
-    await axios.get(`http://localhost:3001/api/rooms/${context.query.roomId}`)
+    await axios.get(
+      urljoin(config.backendUrl, `api/rooms/${context.query.roomId}`)
+    )
   ).data;
 
   return { props: { room, token: session.accessToken } };
@@ -122,9 +132,11 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   //Socket
   const socket = useRef<RoomSocket>({} as RoomSocket);
   const [socketConnected, setSocketConnected] = useState(false);
+  const roomPermissions = useRef(new Set<RoomPermission>());
 
   //Room
   const room = useAppSelector((selector) => selector.room);
+  const isHost = useRef(false);
 
   //Settings
   const settings = useAppSelector((selector) => selector.settings);
@@ -243,9 +255,9 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
       if (
         micProducerRef.current &&
         !micProducerRef.current.paused &&
-        Math.abs(volume - lastVolume.current) > 1
+        isSpeaking.current &&
+        Math.abs(volume - lastVolume.current) > 2
       ) {
-        console.log("changevolume");
         if (volume < lastVolume.current) {
           volume =
             lastVolume.current -
@@ -474,7 +486,15 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   };
 
   const updateRoomData = (roomData: any) => {
-    const { peers, requestPeers, me, ...roomInfo } = roomData;
+    let { peers, requestPeers, me, ...roomInfo } = roomData;
+
+    isHost.current = roomInfo.isHost;
+    (roomInfo as Room).allowCamera &&
+      roomPermissions.current.add("SHARE_VIDEO");
+    (roomInfo as Room).allowMicrophone &&
+      roomPermissions.current.add("SHARE_AUDIO");
+    (roomInfo as Room).allowScreenShare &&
+      roomPermissions.current.add("SHARE_SCREEN");
 
     dispatch(setRoomInfo({ roomInfo }));
     dispatch(addPeers({ peers }));
@@ -483,23 +503,29 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   };
 
   const havePermission = (permission: RoomPermission) => {
-    if (room.isHost) return true;
+    if (isHost.current) return true;
 
-    if (room.allowCamera && permission === "SHARE_VIDEO") {
+    if (
+      permission === "SHARE_VIDEO" &&
+      roomPermissions.current.has("SHARE_VIDEO")
+    ) {
       return true;
     }
 
-    if (room.allowMicrophone && permission === "SHARE_AUDIO") {
+    if (
+      permission === "SHARE_SCREEN" &&
+      roomPermissions.current.has("SHARE_SCREEN")
+    ) {
       return true;
     }
 
-    if (room.allowScreenShare && permission === "SHARE_SCREEN") {
+    if (
+      permission === "SHARE_AUDIO" &&
+      roomPermissions.current.has("SHARE_AUDIO")
+    ) {
       return true;
     }
 
-    if (room.allowChat && permission === "SEND_CHAT") {
-      return true;
-    }
     return false;
   };
 
@@ -780,7 +806,9 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
     micProducerRef.current = null;
 
+    dispatch(setAudioMuted(true));
     dispatch(setAudioInProgress({ flag: false }));
+    isSpeaking.current = false;
   };
 
   const updateMic = async ({
@@ -1102,7 +1130,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   };
 
   useEffect(() => {
-    socket.current = io("http://localhost:3001/", {
+    socket.current = io(config.backendUrl, {
       withCredentials: true,
       query: {
         roomId,
@@ -1492,7 +1520,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
               const { questionId, reply } = notification.data;
 
               dispatch(replyQuestion({ questionId, reply }));
-              
+
               notificationSound.current &&
                 (
                   notificationSound.current.cloneNode(true) as HTMLAudioElement
@@ -1613,24 +1641,67 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
             }
 
             case "host:turnOnScreenSharing": {
+              dispatch(setRoomAllowScreenshare(true));
+              roomPermissions.current.add("SHARE_SCREEN");
+              break;
             }
+
             case "host:turnOffScreenSharing": {
+              await disableScreenSharing();
+              dispatch(setRoomAllowScreenshare(false));
+              roomPermissions.current.delete("SHARE_SCREEN");
+              break;
             }
+
             case "host:turnOnChat": {
+              dispatch(setRoomAllowChat(true));
+              break;
             }
             case "host:turnOffChat": {
+              dispatch(setRoomAllowChat(false));
+              break;
             }
             case "host:turnOnMicrophone": {
+              dispatch(setRoomAllowMicrophone(true));
+              roomPermissions.current.add("SHARE_AUDIO");
+              break;
             }
             case "host:turnOffMicrophone": {
+              await disableMic();
+              dispatch(setRoomAllowMicrophone(false));
+              roomPermissions.current.delete("SHARE_AUDIO");
+              break;
             }
             case "host:turnOnVideo": {
+              dispatch(setRoomAllowCamera(true));
+              roomPermissions.current.add("SHARE_VIDEO");
+              break;
             }
             case "host:turnOffVideo": {
+              await disableWebcam();
+              dispatch(setRoomAllowCamera(false));
+              roomPermissions.current.delete("SHARE_VIDEO");
+              break;
             }
+
             case "host:turnOnQuestion": {
+              dispatch(setRoomAllowQuestion(true));
+              break;
             }
+
             case "host:turnOffQuestion": {
+              dispatch(setRoomAllowQuestion(false));
+              break;
+            }
+
+            case "host:turnOnRaisehand": {
+              dispatch(setRoomAllowRaiseHand(true));
+              break;
+            }
+
+            case "host:turnOffRaisehand": {
+              dispatch(setRoomAllowRaiseHand(false));
+              break;
             }
 
             default: {

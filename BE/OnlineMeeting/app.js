@@ -31,7 +31,7 @@ const PORT = process.env.PORT || config.listenPort || 8080;
     await runMediasoupWorker();
     await runExpressApp();
     await runWebServer();
-    //await runSequelize();
+    // await runSequelize();
     await runSocketServer();
   } catch (err) {
     console.error(err);

@@ -54,6 +54,7 @@ const PollBox = ({ hidden }: PollProps) => {
   const dispatch = useAppDispatch();
 
   const polls = useAppSelector((selector) => selector.polls);
+  const isHost = useAppSelector((selector) => selector.room.isHost);
 
   const getPolls = async () => {
     try {
@@ -165,16 +166,18 @@ const PollBox = ({ hidden }: PollProps) => {
           </>
         )}
       </div>
-      <div className={classNames({ hidden })}>
-        <div className="flex-center bg-white p-3 border-t border-gray-200">
-          <Button
-            onClick={() => setIsOpenDrawer(true)}
-            className="font-semibold"
-          >
-            Add a poll
-          </Button>
+      {isHost && (
+        <div className={classNames({ hidden })}>
+          <div className="flex-center bg-white p-3 border-t border-gray-200">
+            <Button
+              onClick={() => setIsOpenDrawer(true)}
+              className="font-semibold"
+            >
+              Add a poll
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       <PollDrawer
         isOpen={isOpenDrawer}
         onClose={() => setIsOpenDrawer(false)}

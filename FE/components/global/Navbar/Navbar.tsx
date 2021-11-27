@@ -64,8 +64,8 @@ const Navbar = () => {
       <div className="max-w-7xl w-full flex justify-between items-center relative">
         <Link href="/">
           <a className="cursor-pointer flex items-center select-none">
-            <Logo className="max-h-[60px]" />
-            <span className="font-poppins font-semibold text-sm">OMEETING</span>
+            <Logo className="max-h-[60px] mr-2" />
+            <span className="font-poppins font-semibold text-[15px]">OMEETING</span>
           </a>
         </Link>
         <div className="flex items-center space-x-6 text-sm font-poppins font-semibold">
@@ -98,7 +98,7 @@ const Navbar = () => {
                 className="origin-top-right"
                 offset={[3, 5]}
                 content={
-                  <div className="border border-gray-300 py-2 font-medium rounded-md shadow w-[200px] bg-white">
+                  <div className="border border-gray-300 py-2 font-medium rounded-md shadow min-w-[200px] bg-white">
                     <div className="py-1.5 px-3">
                       <div>{session?.data?.user?.displayName}</div>
                       <div className="text-[13px]">

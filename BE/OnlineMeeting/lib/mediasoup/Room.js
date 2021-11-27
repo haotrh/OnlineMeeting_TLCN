@@ -46,6 +46,8 @@ module.exports = class Room {
 
     this.allowQuestion = true;
 
+    this.allowRaiseHand = true;
+
     this.selfDestructTimeout = null;
 
     this.closed = false;
@@ -809,16 +811,18 @@ module.exports = class Room {
           cb({ error: "Already raised" })
           throw new Error("Already raised")
         }
-        console.log("raisehand")
 
-        peer.raisedHand = true;
+        if (this.allowRaiseHand) {
+          peer.raisedHand = true;
 
-        for (const otherPeer of this.getJoinedPeers(peer.id)) {
-          console.log(otherPeer.name, otherPeer.id)
-          this.notification(otherPeer.socket, "raisedHand", { peerId: peer.id })
+          for (const otherPeer of this.getJoinedPeers(peer.id)) {
+            this.notification(otherPeer.socket, "raisedHand", { peerId: peer.id })
+          }
+          cb()
+          return
         }
 
-        cb()
+        cb({ error: "You have no permission to raise hand" })
 
         break;
       }
@@ -1209,8 +1213,10 @@ module.exports = class Room {
         this.allowScreenShare = true;
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOnScreenSharing")
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOnScreenSharing")
         }
+        cb()
 
         break;
       }
@@ -1219,8 +1225,11 @@ module.exports = class Room {
         this.allowScreenShare = false;
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOffScreenSharing")
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOffScreenSharing")
         }
+
+        cb()
 
         break;
       }
@@ -1229,8 +1238,11 @@ module.exports = class Room {
         this.allowChat = true;
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOnChat")
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOnChat")
         }
+
+        cb()
 
         break;
       }
@@ -1239,9 +1251,10 @@ module.exports = class Room {
         this.allowChat = false;
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOffChat")
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOffChat")
         }
-
+        cb()
 
         break;
       }
@@ -1250,8 +1263,11 @@ module.exports = class Room {
         this.allowMicrophone = true;
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOnMicrophone")
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOnMicrophone")
         }
+
+        cb()
 
 
         break;
@@ -1261,8 +1277,11 @@ module.exports = class Room {
         this.allowMicrophone = false;
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOffMicrophone")
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOffMicrophone")
         }
+
+        cb()
 
 
         break;
@@ -1272,8 +1291,11 @@ module.exports = class Room {
         this.allowCamera = true;
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOnVideo")
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOnVideo")
         }
+
+        cb()
 
         break;
       }
@@ -1282,27 +1304,55 @@ module.exports = class Room {
         this.allowCamera = false;
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOffVideo")
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOffVideo")
         }
+
+        cb()
 
         break;
       }
+
       case 'host:turnOnQuestion': {
         this.allowQuestion = true;
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOnQuestion")
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOnQuestion")
         }
+
+        cb()
 
         break;
       }
+
       case 'host:turnOffQuestion': {
         this.allowQuestion = false;
-
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOffQuestion")
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOffQuestion")
         }
+        cb()
+        break;
+      }
 
+      case 'host:turnOffRaisehand': {
+        this.allowRaiseHand = false;
+        for (const peer of this.getJoinedPeers()) {
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOffRaisehand")
+        }
+        cb()
+        break;
+      }
+
+      case 'host:turnOnRaisehand': {
+        this.allowRaiseHand = true;
+        for (const peer of this.getJoinedPeers()) {
+          if (!peer.isHost)
+            this.notification(peer.socket, "host:turnOnRaisehand")
+        }
+        cb()
         break;
       }
 
@@ -1408,6 +1458,8 @@ module.exports = class Room {
     const peers = this.getPeersInfo(peer.id)
     const requestPeers = this.getRequestPeersInfo()
 
+    const isHost = this.hostId === peer.authId
+
     return {
       id: this.id,
       name: this.name,
@@ -1416,10 +1468,12 @@ module.exports = class Room {
       allowChat: this.allowChat,
       allowMicrophone: this.allowMicrophone,
       allowScreenShare: this.allowScreenShare,
-      allowToJoin: this.invitedIds.has(peer.authId) || this.hostId === peer.authId,
+      allowQuestion: this.allowQuestion,
+      allowRaiseHand: this.allowRaiseHand,
+      allowToJoin: this.invitedIds.has(peer.authId) || isHost,
       peers,
-      requestPeers: this.hostId === peer.authId ? requestPeers : [],
-      isHost: this.hostId === peer.authId
+      requestPeers: isHost ? requestPeers : [],
+      isHost
     };
   }
 }

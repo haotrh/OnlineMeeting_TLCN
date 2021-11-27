@@ -114,6 +114,7 @@ const resetPassword = async (resetPasswordToken, newPassword) => {
             throw new Error();
         }
         const user = await userService.getUserById(payload.sub);
+        console.log(user)
         if (!user) {
             throw new Error();
         }

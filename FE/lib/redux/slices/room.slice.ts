@@ -76,6 +76,14 @@ export const roomSlice = createSlice({
       state.allowScreenShare = action.payload;
     },
 
+    setRoomAllowQuestion: (state, action: PayloadAction<boolean>) => {
+      state.allowQuestion = action.payload;
+    },
+
+    setRoomAllowRaiseHand: (state, action: PayloadAction<boolean>) => {
+      state.allowRaiseHand = action.payload;
+    },
+
     clearRoom: () => {
       return initialState;
     },
@@ -90,6 +98,12 @@ export const {
   setRoomState,
   setSpotlights,
   setPin,
+  setRoomAllowCamera,
+  setRoomAllowChat,
+  setRoomAllowMicrophone,
+  setRoomAllowScreenshare,
+  setRoomAllowQuestion,
+  setRoomAllowRaiseHand,
 } = roomSlice.actions;
 
 export default roomSlice.reducer;

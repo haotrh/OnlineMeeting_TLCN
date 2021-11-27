@@ -45,11 +45,7 @@ export interface Spotlight {
   peerId: string;
 }
 
-export type RoomPermission =
-  | "SHARE_AUDIO"
-  | "SHARE_VIDEO"
-  | "SHARE_SCREEN"
-  | "SEND_CHAT";
+export type RoomPermission = "SHARE_AUDIO" | "SHARE_VIDEO" | "SHARE_SCREEN";
 
 export interface ConsumerState {
   id: string;
@@ -83,6 +79,8 @@ export interface Room {
   allowChat?: boolean;
   allowMicrophone?: boolean;
   allowScreenShare?: boolean;
+  allowQuestion?: boolean;
+  allowRaiseHand?: boolean;
   allowToJoin?: boolean;
   isHost?: boolean;
 }

@@ -1,10 +1,15 @@
 import classNames from "classnames";
 import _ from "lodash";
-import { FormEvent, useContext, useEffect, useRef, useState } from "react";
+import {
+  FormEvent,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { FaTelegramPlane } from "react-icons/fa";
-import useSound from "use-sound";
-import { useAppDispatch, useAppSelector } from "../../../../../../hooks/redux";
-import { addMessage } from "../../../../../../lib/redux/slices/chat.slice";
+import { useAppSelector } from "../../../../../../hooks/redux";
 import { RoomContext } from "../../../../../contexts/RoomContext";
 import MyMessage from "./MyMessage";
 import OtherMessage from "./OtherMessage";
@@ -35,7 +40,7 @@ const MessageBox = ({ hidden }: MessageBoxProps) => {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (_.isEmpty(text)) {
+    if (_.isEmpty(text) || !havePermission) {
       return;
     }
 
@@ -45,6 +50,14 @@ const MessageBox = ({ hidden }: MessageBoxProps) => {
 
     setText("");
   };
+
+  const allowChat = useAppSelector((selector) => selector.room.allowChat);
+
+  const isHost = useAppSelector((selector) => selector.room.isHost);
+
+  const havePermission = useMemo(() => {
+    return allowChat || (!allowChat && isHost);
+  }, [allowChat, isHost]);
 
   const scrollToBottom = () => {
     endMessageRef.current?.scrollIntoView({});
@@ -78,19 +91,29 @@ const MessageBox = ({ hidden }: MessageBoxProps) => {
       <div className={classNames({ hidden })}>
         <form
           onSubmit={handleSubmit}
-          className="flex bg-white p-2 border-t border-gray-200"
+          className={classNames("flex p-2 border-t border-gray-200", {
+            "bg-white": havePermission,
+            "bg-gray-100 pointer-events-none": !havePermission,
+          })}
         >
           <input
+            disabled={!havePermission}
             ref={inputRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="flex-1 focus:outline-none text-[14px] font-semibold mx-2 text-gray-600"
+            className="flex-1 focus:outline-none text-[14px] font-semibold mx-2 text-gray-600 bg-transparent"
             placeholder="Place your message..."
           />
           <button
             type="submit"
-            className="bg-indigo-200 text-indigo-500 bg-opacity-50 hover:bg-opacity-70
-            transition-colors w-[36px] h-[36px] flex-center rounded-lg"
+            className={classNames(
+              "transition-colors w-[36px] h-[36px] flex-center rounded-lg",
+              {
+                "bg-indigo-200 text-indigo-500 bg-opacity-50 hover:bg-opacity-70":
+                  havePermission,
+                "bg-indigo-100 text-indigo-400": !havePermission,
+              }
+            )}
           >
             <FaTelegramPlane size={16} />
           </button>
