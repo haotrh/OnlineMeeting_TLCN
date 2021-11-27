@@ -28,7 +28,7 @@ const Button = ({
   ...props
 }: ButtonProps) => {
   const handleClick = (e: any) => {
-    if (!disabled) onClick && onClick(e);
+    if (!disabled && !loading) onClick && onClick(e);
   };
 
   return (
@@ -49,8 +49,9 @@ const Button = ({
           base === "danger" && !disabled,
         "border-2 border-red-300 text-red-500 hover:bg-red-50/70 transition-colors":
           base === "danger-outline" && !disabled,
-        "bg-gray-200 cursor-default": disabled,
+        "bg-gray-200 ": disabled,
         "flex-center": loading,
+        "cursor-default": disabled || loading,
       })}
       {...props}
     >

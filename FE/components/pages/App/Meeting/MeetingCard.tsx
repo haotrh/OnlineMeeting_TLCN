@@ -23,7 +23,7 @@ const MeetingCard = ({ user, room }: MeetingCardProps) => {
     <>
       <div>
         <div
-          className="bg-white shadow-sm py-3 px-5 rounded-lg overflow-hidden
+          className="bg-white shadow-md hover:shadow-xl h-full transition-shadow py-3 px-5 rounded-lg overflow-hidden
       flex space-x-4 relative group"
         >
           <div>

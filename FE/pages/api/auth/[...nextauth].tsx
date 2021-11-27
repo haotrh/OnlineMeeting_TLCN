@@ -5,6 +5,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 import { JwtUtils } from "../../../utils/JwtUtils";
 import urljoin from "url-join";
+import { updateUser } from "../../../api/user.api";
+import _ from "lodash";
 
 export const refreshToken = async function (refreshToken: string) {
   try {
@@ -143,15 +145,30 @@ export default NextAuth({
           return token;
         }
 
-        return {
-          ...token,
-          exp: 0,
-        };
+        return null;
       }
 
-      return token;
+      const updatedUser = (
+        await axios.post(
+          urljoin(process.env.BACKEND_URL as string, "api/auth/me"),
+          null,
+          {
+            headers: { Authorization: `Bearer ${token.accessToken}` },
+          }
+        )
+      ).data;
+
+      if (!updatedUser) {
+        return null;
+      }
+
+      return { ...token, user: updatedUser };
     },
     async session({ token, session }: { session: any; token: any }) {
+      if (_.isNull(token)) {
+        return null;
+      }
+
       session.user = token.user;
       session.accessToken = token.accessToken;
 
