@@ -8,6 +8,7 @@ type RoomStateType =
   | "connected"
   | "disconnected"
   | "closed"
+  | "left"
   //Ask to join denied
   | "denied"
   //Ask to join waiting

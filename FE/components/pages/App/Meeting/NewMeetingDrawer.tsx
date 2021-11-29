@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "react-query";
-import { toast } from "react-toastify";
 import { roomApi } from "../../../../api";
 import { AppDrawerProps } from "../AppDrawer/AppDrawer";
 import MeetingDrawer, { MeetingFormData } from "./MeetingDrawer";
@@ -14,7 +13,7 @@ const NewMeetingDrawer = ({ title, onClose, ...props }: AppDrawerProps) => {
     onSuccess: async (newRoom) => {
       onClose();
       queryClient.setQueryData("rooms", (old: any) => {
-        return [...old, newRoom];
+        return [newRoom, ...old];
       });
     },
     onError: (err: any) => {

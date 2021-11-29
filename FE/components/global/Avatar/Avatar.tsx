@@ -1,5 +1,4 @@
 import classNames from "classnames";
-import { useSession } from "next-auth/react";
 
 interface AvatarProps {
   size?: number;
@@ -7,9 +6,17 @@ interface AvatarProps {
   children?: React.ReactNode;
   src?: string;
   name?: string;
+  imgClassName?: string;
 }
 
-const Avatar = ({ className, src, name, children, size = 40 }: AvatarProps) => {
+const Avatar = ({
+  className,
+  imgClassName,
+  src,
+  name,
+  children,
+  size = 40,
+}: AvatarProps) => {
   return (
     <div
       className={classNames(className, "select-none relative")}
@@ -17,7 +24,10 @@ const Avatar = ({ className, src, name, children, size = 40 }: AvatarProps) => {
     >
       {src && (
         <img
-          className="w-full h-full object-contain rounded-full"
+          className={classNames(
+            "w-full h-full object-contain rounded-full",
+            imgClassName
+          )}
           src={src}
           alt="Avatar"
         />

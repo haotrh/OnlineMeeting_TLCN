@@ -476,7 +476,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
     }
   };
 
-  const close = () => {
+  const close = (closed?: boolean) => {
     if (room.state === "closed") return;
 
     socket.current.close();
@@ -485,7 +485,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
     if (recvTransportRef.current) recvTransportRef.current.close();
 
-    dispatch(setRoomState("closed"));
+    dispatch(setRoomState(closed ? "closed" : "left"));
   };
 
   const updateRoomData = (roomData: any) => {
@@ -1550,6 +1550,13 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
               const newPoll = notification.data;
 
               dispatch(addPoll(newPoll));
+
+              break;
+            }
+
+            case "roomClosed": {
+              toast("Host closed the room");
+              close(true);
 
               break;
             }

@@ -47,6 +47,64 @@ const updateRoomById = async (roomId, body) => {
             }
         }, { transaction: t })
         await room.addGuests(guests, { transaction: t })
+
+        const activeRoom = global.roomList.get(roomId)
+
+        if (activeRoom) {
+            if (data.hasOwnProperty("allowScreenShare")) {
+                if (data.allowScreenShare && !room.allowScreenShare) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnScreenSharing" }, () => { }, true)
+                }
+                if (!data.allowScreenShare && room.allowScreenShare) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffScreenSharing" }, () => { }, true)
+                }
+            }
+
+            if (data.hasOwnProperty("allowChat")) {
+                if (data.allowChat && !room.allowChat) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnChat" }, () => { }, true)
+                }
+                if (!data.allowChat && room.allowChat) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffChat" }, () => { }, true)
+                }
+            }
+
+            if (data.hasOwnProperty("allowMicrophone")) {
+                if (data.allowMicrophone && !room.allowMicrophone) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnMicrophone" }, () => { }, true)
+                }
+                if (!data.allowMicrophone && room.allowMicrophone) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffMicrophone" }, () => { }, true)
+                }
+            }
+
+            if (data.hasOwnProperty("allowCamera")) {
+                if (data.allowCamera && !room.allowCamera) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnVideo" }, () => { }, true)
+                }
+                if (!data.allowCamera && room.allowCamera) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffVideo" }, () => { }, true)
+                }
+            }
+
+            if (data.hasOwnProperty("allowQuestion")) {
+                if (data.allowQuestion && !room.allowQuestion) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnQuestion" }, () => { }, true)
+                }
+                if (!data.allowQuestion && room.allowQuestion) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffQuestion" }, () => { }, true)
+                }
+            }
+
+            if (data.hasOwnProperty("allowRaiseHand")) {
+                if (data.allowRaiseHand && !room.allowRaiseHand) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnRaisehand" }, () => { }, true)
+                }
+                if (!data.allowRaiseHand && room.allowRaiseHand) {
+                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffRaisehand" }, () => { }, true)
+                }
+            }
+        }
     })
     await room.reload()
 
@@ -65,6 +123,7 @@ const getRooms = async (userId) => {
                 { '$guests.guest_room.guestId$': userId },
             ]
         },
+        order: [['createdAt', 'desc']],
         include: [{
             model: User,
             as: "guests"

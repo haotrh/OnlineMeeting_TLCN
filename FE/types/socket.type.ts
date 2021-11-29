@@ -52,7 +52,8 @@ export type RequestMethod =
   | "host:turnOnQuestion"
   | "host:turnOffQuestion"
   | "host:turnOffRaisehand"
-  | "host:turnOnRaisehand";
+  | "host:turnOnRaisehand"
+  | "host:closeRoom";
 
 export interface RoomSocket extends Socket {
   request: (type: RequestMethod, data?: any) => Promise<any>;

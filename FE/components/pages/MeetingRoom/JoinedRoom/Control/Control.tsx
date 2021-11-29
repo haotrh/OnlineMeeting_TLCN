@@ -1,5 +1,5 @@
 import { useSingleton } from "@tippyjs/react";
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
   IoHandLeftOutline,
   IoHandLeftSharp,
@@ -12,6 +12,7 @@ import { MdStopScreenShare } from "react-icons/md";
 import { RiPhoneFill } from "react-icons/ri";
 import { useAppDispatch, useAppSelector } from "../../../../../hooks/redux";
 import { setRaiseHand } from "../../../../../lib/redux/slices/me.slice";
+import Popover from "../../../../common/Popover/Popover";
 import Tooltip from "../../../../common/Tooltip/Tooltip";
 import { RoomContext } from "../../../../contexts/RoomContext";
 import { SettingsButton } from "../Settings/SettingsButton";
@@ -41,6 +42,8 @@ const Control = () => {
     useAppSelector((selector) => selector.me);
 
   const room = useAppSelector((selector) => selector.room);
+
+  const [openClose, setOpenClose] = useState(false);
 
   const dispatch = useAppDispatch();
 
@@ -103,16 +106,49 @@ const Control = () => {
             {raisedHand ? <IoHandLeftSharp /> : <IoHandLeftOutline />}
           </ControlButton>
         )}
-        <Tooltip content="Leave the room" singleton={target}>
-          <button
-            onClick={() => {
-              close();
-            }}
-            className="bg-red-500 text-white flex-center rounded-full text-xl p-3"
+        {!room.isHost && (
+          <Tooltip content="Leave the room" singleton={target}>
+            <button
+              onClick={() => {
+                close();
+              }}
+              className="bg-red-500 text-white flex-center rounded-full text-xl p-3"
+            >
+              <RiPhoneFill />
+            </button>
+          </Tooltip>
+        )}
+        {room.isHost && (
+          <Popover
+            interactive={true}
+            placement={"top"}
+            visible={openClose}
+            onClickOutside={() => setOpenClose(false)}
+            content={
+              <div className="bg-white text-[15px] shadow-md text-gray-600 py-1 rounded-md flex flex-col w-[200px]">
+                <button
+                  onClick={close}
+                  className="text-left py-1 px-2.5 hover:bg-gray-100 font-semibold"
+                >
+                  Leave the room
+                </button>
+                <button
+                  onClick={() => socket.request("host:closeRoom")}
+                  className="text-left py-1 px-2.5 hover:bg-gray-100 font-semibold"
+                >
+                  Close the room
+                </button>
+              </div>
+            }
           >
-            <RiPhoneFill />
-          </button>
-        </Tooltip>
+            <button
+              onClick={() => setOpenClose(!openClose)}
+              className="bg-red-500 text-white flex-center rounded-full text-xl p-3"
+            >
+              <RiPhoneFill />
+            </button>
+          </Popover>
+        )}
         <ControlButton
           onClick={() => {
             if (!isScreenSharing) updateScreenSharing({ start: true });

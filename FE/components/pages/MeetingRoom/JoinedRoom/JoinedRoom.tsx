@@ -64,10 +64,12 @@ const JoinedRoom = () => {
             <RightContainer show={showRightContainer} />
           </>
         )}
-        {roomInfo.state === "closed" && (
+        {(roomInfo.state === "closed" || roomInfo.state === "left") && (
           <div className="w-full pt-40 flex items-center flex-col">
             <h1 className="text-2xl text-white font-semibold">
-              You left the meeting
+              {roomInfo.state === "left"
+                ? "You left the meeting"
+                : "The room has been closed"}
             </h1>
             <Link href="/app" passHref>
               <div>

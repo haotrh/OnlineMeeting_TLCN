@@ -9,7 +9,6 @@ const mediasoup = require('mediasoup')
 const config = require('./config/mediasoup.config')
 const Room = require('./lib/mediasoup/Room')
 const routes = require('./routes');
-const { sequelize } = require("./models/index");
 const { errorConverter, errorHandler } = require("./middleware/error");
 const passport = require('passport');
 const { jwtStrategy } = require('./config/passport.config');
@@ -22,7 +21,7 @@ let app;
 let httpsServer;
 let workers = [];
 let nextMediasoupWorkerIdx = 0;
-let roomList = new Map();
+global.roomList = new Map();
 const PORT = process.env.PORT || config.listenPort || 8080;
 
 //Init
@@ -140,7 +139,6 @@ async function runSocketServer() {
         socket.disconnect(true);
         return;
       }
-
       user = await userService.getUserById(payload.sub);
     } catch (err) {
       logger.warn('Not authenticated');
@@ -182,7 +180,7 @@ async function runSocketServer() {
         return;
       }
 
-      const room = roomList.get(socket.roomId)
+      const room = global.roomList.get(socket.roomId)
 
       room.removePeer(socket.id);
     })
@@ -199,7 +197,7 @@ const getMediasoupWorker = () => {
 };
 
 const getOrCreateRoom = async ({ roomId, socket }) => {
-  let room = roomList.get(roomId)
+  let room = global.roomList.get(roomId)
 
   if (room && room.closed) {
     room = null;
@@ -221,11 +219,11 @@ const getOrCreateRoom = async ({ roomId, socket }) => {
       socket,
       worker: getMediasoupWorker(),
       roomClose: () => {
-        roomList.delete(roomId)
+        global.roomList.delete(roomId)
       }
     })
 
-    roomList.set(room.id, room);
+    global.roomList.set(room.id, room);
   }
 
   return room
