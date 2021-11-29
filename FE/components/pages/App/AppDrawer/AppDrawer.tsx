@@ -12,17 +12,18 @@ const AppDrawer = ({
   isOpen,
   onClose,
   title,
+  removeWhenClosed = true,
   ...props
 }: AppDrawerProps) => {
   return (
     <Drawer {...props} isOpen={isOpen} onClose={onClose} position="right">
-      <div className="relative z-50 max-w-[650px] w-screen bg-white h-full">
+      <div className="relative z-50 max-w-[650px] w-screen bg-white h-full flex flex-col">
         {title && (
           <div className="py-6 px-8 text-2xl border-b font-semibold">
             {title}
           </div>
         )}
-        <div className="p-8">{children}</div>
+        <div className="p-8 overflow-y-auto scrollbar1 flex-1">{children}</div>
       </div>
       {isOpen && (
         <div className="absolute right-full top-0 p-3 z-40">

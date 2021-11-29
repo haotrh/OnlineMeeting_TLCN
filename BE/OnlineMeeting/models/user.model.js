@@ -4,7 +4,7 @@ const { cleanModelAttributes } = require("../utils/cleanModelAttributes");
 module.exports = (sequelize) => {
   const secretColumns = ['password', 'verifyCode', 'provider']
 
-  const UserModel = sequelize.define("User", {
+  const UserModel = sequelize.define("user", {
     firstName: {
       type: DataTypes.STRING,
       allowNull: false,

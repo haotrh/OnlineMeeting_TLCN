@@ -1,4 +1,5 @@
 import { MediaKind } from "mediasoup-client/lib/RtpParameters";
+import { User } from "./user.type";
 
 export type SpotlightType = "peer" | "screen";
 
@@ -85,6 +86,29 @@ export interface Room {
   isHost?: boolean;
 }
 
+export interface RoomData {
+  name: string;
+  id: string;
+  allowCamera: boolean;
+  allowChat: boolean;
+  allowMicrophone: boolean;
+  allowScreenShare: boolean;
+  allowQuestion: boolean;
+  allowRaiseHand: boolean;
+  allowToJoin: boolean;
+  guests: User[];
+  createdAt: Date;
+  updatedAt: Date;
+  host: User;
+}
+
 export interface CreateRoom {
   name: string;
+  allowCamera: boolean;
+  allowChat: boolean;
+  allowMicrophone: boolean;
+  allowScreenShare: boolean;
+  allowQuestion: boolean;
+  allowRaiseHand: boolean;
+  guests: string[];
 }

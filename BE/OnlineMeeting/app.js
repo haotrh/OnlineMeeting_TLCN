@@ -31,7 +31,7 @@ const PORT = process.env.PORT || config.listenPort || 8080;
     await runMediasoupWorker();
     await runExpressApp();
     await runWebServer();
-    // await runSequelize();
+    await runSequelize();
     await runSocketServer();
   } catch (err) {
     console.error(err);
@@ -107,7 +107,7 @@ async function runWebServer() {
 
 //RUN SEQUELIZE
 async function runSequelize() {
-  await sequelize.sync({ force: true })
+  //await sequelize.sync()
   console.log('Drop and Resync Db');
 }
 

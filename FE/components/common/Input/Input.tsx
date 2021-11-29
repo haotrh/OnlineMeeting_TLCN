@@ -12,7 +12,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           className={classNames(
             className,
-            "py-2 px-3 rounded-md border text-sm font-medium transition-colors " +
+            "py-2 px-3 font-quicksand rounded-md border text-sm font-semibold transition-colors " +
               "focus:border-indigo-500 hover:border-gray-400/80 border-gray-300 w-full text-gray-600",
             {
               "!border-red-600": error,

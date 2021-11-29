@@ -1,11 +1,20 @@
 const httpStatus = require('http-status');
-const { userService } = require('../services');
+const { userService, roomService } = require('../services');
 const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
 const bcrypt = require('bcrypt');
+const _ = require('lodash');
+const db = require("../models")
 
 const getUsers = catchAsync(async (req, res) => {
-    const result = await userService.queryUsers(filter, options);
+    const { email, isVerified, limit, offset, excludeUserId } = req.query
+
+    let result = [];
+
+    if (email.length > 0) {
+        result = await userService.getUsers({ email, limit, offset, isVerified, excludeUserId });
+    }
+
     res.send(result);
 });
 
@@ -17,12 +26,12 @@ const getUser = catchAsync(async (req, res) => {
     res.send(user);
 });
 
-const getUserCreatedRooms = catchAsync(async (req, res) => {
+const getUserRooms = catchAsync(async (req, res) => {
     const user = await userService.getUserById(req.params.userId);
     if (!user) {
         throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
     }
-    const rooms = await user.getCreatedRooms();
+    const rooms = await roomService.getRooms(req.params.userId);
     res.send(rooms);
 });
 
@@ -59,6 +68,6 @@ module.exports = {
     getUser,
     updateUser,
     deleteUser,
-    getUserCreatedRooms,
-    changePassword
+    getUserRooms,
+    changePassword,
 };

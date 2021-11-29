@@ -19,6 +19,8 @@ const Modal = ({
   onClose,
   removeWhenClosed = true,
 }: ModalProps) => {
+  const portalId = "modal-portal";
+
   const bodyRef = useRef<HTMLBodyElement | null>(null);
   const portalRootRef = useRef<HTMLElement | null>(null);
 
@@ -29,7 +31,7 @@ const Modal = ({
     setMounted(true);
     bodyRef.current = document.querySelector("body");
     portalRootRef.current =
-      document.getElementById("portal-root") ?? createPortalRoot();
+      document.getElementById(portalId) ?? createPortalRoot(portalId);
     if (bodyRef.current) {
       bodyRef.current.appendChild(portalRootRef.current);
       const portal = portalRootRef.current;

@@ -23,6 +23,8 @@ const Drawer = ({
   position = "left",
   removeWhenClosed = true,
 }: DrawerProps) => {
+  const portalId = "drawer-portal";
+
   const bodyRef = useRef<HTMLBodyElement | null>(null);
   const portalRootRef = useRef<HTMLElement | null>(null);
 
@@ -30,38 +32,23 @@ const Drawer = ({
   const [animationEnd, setAnimationEnd] = useState(false);
 
   useEffect(() => {
-    // const updatePageScroll = () => {
-    //   if (bodyRef.current) {
-    //     if (isOpen) {
-    //       bodyRef.current.style.overflow = "hidden";
-    //     } else {
-    //       bodyRef.current.style.overflow = "";
-    //     }
-    //   }
-    // };
-    // updatePageScroll();
-  }, [isOpen]);
-
-  useEffect(() => {
     setMounted(true);
     bodyRef.current = document.querySelector("body");
     portalRootRef.current =
-      document.getElementById("portal-root") ?? createPortalRoot();
+      document.getElementById(portalId) ?? createPortalRoot(portalId);
     if (bodyRef.current) {
       bodyRef.current.appendChild(portalRootRef.current);
-      const portal = portalRootRef.current;
-      // const bodyEl = bodyRef.current;
-      // return () => {
-      //   // Clean up the portal when drawer component unmounts
-      //   // portal.remove();
-      //   // Ensure scroll overflow is removed
-      //   // bodyEl.style.overflow = "";
-      // };
+      return () => {
+        // Clean up the portal when drawer component unmounts
+        // portal.remove();
+      };
     }
   }, []);
 
-  if (removeWhenClosed && !isOpen && animationEnd) return null;
-
+  if (removeWhenClosed && !isOpen && animationEnd) {
+    return null;
+  }
+  
   return !mounted
     ? null
     : createPortal(
@@ -72,8 +59,10 @@ const Drawer = ({
                 onAnimationStart={() => {
                   removeWhenClosed && setAnimationEnd(false);
                 }}
-                onAnimationEnd={() => {
-                  removeWhenClosed && setAnimationEnd(true);
+                onAnimationComplete={(definition: any) => {
+                  removeWhenClosed &&
+                    definition.x === "100%" &&
+                    setAnimationEnd(true);
                 }}
                 key="drawer"
                 aria-hidden={isOpen ? "false" : "true"}
@@ -81,7 +70,7 @@ const Drawer = ({
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                className={classNames(className, "fixed top-0 z-50 h-screen", {
+                className={classNames(className, "fixed top-0 z-40 h-screen", {
                   "right-0": position === "right",
                   "left-0": position === "left",
                 })}
@@ -103,7 +92,7 @@ const Drawer = ({
                   duration: 0.25,
                 }}
                 onClick={onClose}
-                className="fixed inset-0 bg-black/30 z-40"
+                className="fixed inset-0 bg-black/30 z-30"
               />
             </>
           )}

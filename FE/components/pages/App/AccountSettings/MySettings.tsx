@@ -64,7 +64,7 @@ const MySettings = () => {
         <div className="flex justify-between items-center">
           <div>
             Your email address is{" "}
-            <span className="font-bold">{hideEmail(user?.email ?? "")}</span>
+            <span className="font-bold">{user?.email}</span>
           </div>
         </div>
         <hr className="my-4" />

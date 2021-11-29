@@ -2,6 +2,8 @@ const db = require('../models')
 const User = db.user;
 const ApiError = require('../utils/ApiError')
 const httpStatus = require('http-status');
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 
 const createUser = async (body) => {
     const user = await getUserByEmail(body.email)
@@ -11,9 +13,36 @@ const createUser = async (body) => {
     return User.create(body)
 }
 
-const queryUsers = async (filter, options) => {
-    const users = await User.findAll();
-    return users;
+const getUsers = async ({ email, isVerified, limit, offset, excludeUserId }) => {
+    let query = {}
+
+    query.where = {}
+
+    if (email) {
+        query.where.email = Sequelize.where(Sequelize.fn('LOWER', Sequelize.col('email')), 'LIKE', '%' + email.toLowerCase() + '%')
+    }
+
+    if (isVerified) {
+        query.where.isVerified = true
+    }
+
+    if (excludeUserId) {
+        query.where.id = {
+            [Op.not]: excludeUserId
+        }
+    }
+
+    if (limit) {
+        query.limit = limit
+    }
+
+    if (offset) {
+        query.offset = offset
+    }
+
+    const users = await User.findAll(query)
+
+    return users
 }
 
 const getUserByEmail = async (email, withSecret = false) => {
@@ -39,5 +68,5 @@ const deleteUserById = async (userId) => {
 }
 
 module.exports = {
-    createUser, getUserByEmail, getUserById, updateUserById, deleteUserById, queryUsers
+    createUser, getUserByEmail, getUserById, updateUserById, deleteUserById, getUsers
 }

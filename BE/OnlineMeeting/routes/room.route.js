@@ -7,7 +7,8 @@ const auth = require('../middleware/auth')
 const router = express.Router();
 
 router.get('/:id', roomController.getRoom);
-router.post('/', auth(), validate(roomValidation.create), roomController.create);
+router.post('/', validate(roomValidation.create), auth(), roomController.create);
+router.put('/:id', validate(roomValidation.update), auth(), roomController.update);
 router.delete('/:id', auth(), roomController.deleteRoom);
 
 module.exports = router;

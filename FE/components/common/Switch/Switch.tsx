@@ -18,6 +18,7 @@ const Switch = ({
 }: SwitchProps) => {
   return (
     <button
+      type="button"
       style={{ width }}
       className={classNames(
         "rounded-full p-1 relative flex transition-colors",

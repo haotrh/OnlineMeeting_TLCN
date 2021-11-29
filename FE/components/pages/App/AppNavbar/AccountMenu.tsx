@@ -33,7 +33,7 @@ const AccountMenu = () => {
       content={
         <div
           onClick={() => setToggle(false)}
-          className="py-2.5 px-3 text-[15px] font-medium min-w-[240px] p-2 shadow-md rounded-xl bg-white"
+          className="py-2.5 px-3 text-[15px] font-medium min-w-[240px] p-2 shadow-lg drop-shadow rounded-xl bg-white"
         >
           <div>
             <div>
@@ -70,7 +70,7 @@ const AccountMenu = () => {
         className="cursor-pointer relative"
         onClick={() => setToggle(!toggle)}
       >
-        <Avatar src={user?.profilePic} name={user?.firstName} />
+        <Avatar src={user?.profilePic} name={user?.displayName} />
         <div className="absolute p-0.5 bg-white flex-center bottom-0 right-0 rounded-full">
           <AiOutlineSetting size={13} />
         </div>

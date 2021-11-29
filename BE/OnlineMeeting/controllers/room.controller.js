@@ -10,12 +10,19 @@ const create = catchAsync(async (req, res) => {
 })
 
 const getRoom = catchAsync(async (req, res) => {
-    const room = await roomService.getRoomById(req.params.id)
-    res.send(room)
+    try {
+        const room = await roomService.getRoomById(req.params.id)
+        res.send(room)
+    } catch (error) {
+        throw new ApiError(httpStatus.BAD_GATEWAY, "Server error!")
+    }
 })
 
 
-const update = catchAsync(async (req, res) => { })
+const update = catchAsync(async (req, res) => {
+    const room = await roomService.updateRoomById(req.params.id, req.body)
+    res.send(room)
+})
 
 const deleteRoom = catchAsync(async (req, res) => {
     const user = req.user

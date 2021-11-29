@@ -24,7 +24,7 @@ const AppNavbar = () => {
   const router = useRouter();
 
   return (
-    <div className="w-16 border-r self-start flex flex-col justify-between items-center h-screen sticky top-0">
+    <div className="w-16 border-r self-start flex flex-col justify-between items-center h-screen sticky top-0 z-30">
       <div className="pt-3 space-y-6">
         <div className="py-1">
           <Link href="/">

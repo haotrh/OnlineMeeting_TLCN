@@ -1,7 +1,7 @@
-const createPortalRoot = () => {
+const createPortalRoot = (id?: string) => {
   const root = document.createElement("div");
-  root.setAttribute("id", "portal-root");
-  return root
+  root.setAttribute("id", id ?? "portal-root");
+  return root;
 };
 
-export default createPortalRoot
+export default createPortalRoot;

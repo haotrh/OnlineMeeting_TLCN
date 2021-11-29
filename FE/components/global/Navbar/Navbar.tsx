@@ -65,11 +65,13 @@ const Navbar = () => {
         <Link href="/">
           <a className="cursor-pointer flex items-center select-none">
             <Logo className="max-h-[60px] mr-2" />
-            <span className="font-poppins font-semibold text-[15px]">OMEETING</span>
+            <span className="font-poppins font-semibold text-[15px]">
+              OMEETING
+            </span>
           </a>
         </Link>
         <div className="flex items-center space-x-6 text-sm font-poppins font-semibold">
-          {session.status === "unauthenticated" ? (
+          {!session.data?.user ? (
             <>
               <Link href="/login">
                 <a className="hover:border-b-[1.5px] border-gray-500">Login</a>
@@ -123,7 +125,7 @@ const Navbar = () => {
                 >
                   <Avatar
                     src={session.data?.user?.profilePic}
-                    name={session.data?.user?.firstName}
+                    name={session.data?.user?.displayName}
                   />
                 </div>
               </Popover>

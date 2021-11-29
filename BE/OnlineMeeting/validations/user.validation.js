@@ -1,6 +1,6 @@
 const Joi = require('joi')
 
-const getUserCreatedRooms = {
+const getUserRooms = {
     params: Joi.object().keys({
         userId: Joi.string()
     })
@@ -13,6 +13,16 @@ const changePassword = {
     }),
 }
 
+const searchUsers = {
+    query: Joi.object().keys({
+        excludeUserId: Joi.string(),
+        email: Joi.string(),
+        limit: Joi.number(),
+        offset: Joi.number(),
+        isVerified: Joi.boolean()
+    }),
+}
+
 module.exports = {
-    getUserCreatedRooms, changePassword
+    getUserRooms, changePassword, searchUsers
 }
