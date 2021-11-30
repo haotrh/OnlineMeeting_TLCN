@@ -11,6 +11,10 @@ module.exports = (sequelize) => {
       allowNull: false,
       type: DataTypes.STRING,
     },
+    isPrivate: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     allowChat: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,

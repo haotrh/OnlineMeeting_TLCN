@@ -2,7 +2,7 @@ const express = require("express");
 const { json, urlencoded } = require("express");
 const cors = require("cors");
 const helmet = require('helmet')
-const https = require("http")
+const https = require("https")
 const fs = require("fs")
 const path = require("path")
 const mediasoup = require('mediasoup')
@@ -15,6 +15,7 @@ const { jwtStrategy } = require('./config/passport.config');
 const { tokenService, roomService, userService } = require("./services");
 const logger = require("./config/logger.config");
 const Peer = require("./lib/mediasoup/Peer");
+const sequelize = require('./models').sequelize
 
 //Global variables
 let app;
@@ -30,7 +31,7 @@ const PORT = process.env.PORT || config.listenPort || 8080;
     await runMediasoupWorker();
     await runExpressApp();
     await runWebServer();
-    await runSequelize();
+    //await runSequelize();
     await runSocketServer();
   } catch (err) {
     console.error(err);
@@ -97,16 +98,15 @@ async function runWebServer() {
     cert: fs.readFileSync(path.join(__dirname, config.sslCrt), "utf-8"),
   };
 
-  httpsServer = https.createServer(options, app);
-
-  httpsServer.listen(PORT, () => {
-    console.log("Listening " + config.listenPort);
+  httpsServer = https.createServer(options, app).listen(PORT, () => {
+    console.log("Listening " + PORT);
   });
+
 }
 
 //RUN SEQUELIZE
 async function runSequelize() {
-  //await sequelize.sync()
+  await sequelize.sync({ force: true })
   console.log('Drop and Resync Db');
 }
 
@@ -115,6 +115,11 @@ async function runSocketServer() {
   const io = require('socket.io')(httpsServer, {
     cors: {
       origin: "http://localhost:3000",
+      methods: ["GET", "POST"],
+      credentials: true,
+    },
+    cors: {
+      origin: "https://online-meeting-tlcn.vercel.app/",
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -156,6 +161,12 @@ async function runSocketServer() {
 
     if (!room) {
       logger.warn('Room is not available');
+      socket.disconnect(true);
+      return;
+    }
+
+    if (room.isPrivate && !room.isPeerValid(user.id)) {
+      logger.warn('Private room');
       socket.disconnect(true);
       return;
     }

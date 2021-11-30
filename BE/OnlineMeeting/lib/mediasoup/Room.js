@@ -24,7 +24,7 @@ module.exports = class Room {
   }
 
   constructor({ roomId, router, worker, hostId, room, audioLevelObserver }) {
-    this.room = room
+    this.room = room;
 
     this.router = router;
 
@@ -50,23 +50,28 @@ module.exports = class Room {
 
     this.allowRaiseHand = room.allowRaiseHand;
 
+    this.isPrivate = room.isPrivate;
+
     this.selfDestructTimeout = null;
 
     this.closed = false;
 
     //All peers included joined, requesting, lobby peers
+    //Key = socket id - Value = peer
     this.allPeers = new Map();
 
     //Joined peers
+    //Key = socket id - Value = peer
     this.peers = new Map();
 
-    //List of invted user id
-    this.invitedIds = new Set([...room.guests.map(guest => guest.id)]);
-
-    //List of request to join users
+    //List of ask to join peers
+    //Key = auth id - Value = peer
     this.requestPeers = new Map();
 
-    // mediasoup AudioLevelObserver.
+    //List of valid peer user id
+    this.validAuthIds = new Set([...room.guests.map(guest => guest.id)]);
+
+    // mediasoup AudioLevelObserver - detect current speaker (choose only one).
     this.audioLevelObserver = audioLevelObserver;
 
     this.questions = new Map()
@@ -105,12 +110,20 @@ module.exports = class Room {
 
   }
 
-  isPeerValid(peerId) {
-    return this.hostId === peerId || this.invitedIds.has(peerId)
+  isPeerValid(peerAuthId) {
+    return this.hostId === peerAuthId || this.validAuthIds.has(peerAuthId)
   }
 
   getJoinedPeers(excludePeerId = undefined) {
     return [...this.peers.values()].filter(peer => peer.id !== excludePeerId)
+  }
+
+  getAllPeers(excludePeerId = undefined) {
+    return [...this.allPeers.values()].filter(peer => peer.id !== excludePeerId)
+  }
+
+  getAllRequestPeers() {
+    return [...this.requestPeers.values()]
   }
 
   timeoutCallback(callback) {
@@ -273,7 +286,51 @@ module.exports = class Room {
 
   }
 
+  acceptPeer(requestPeer) {
+    this.requestPeers.delete(requestPeer.authId)
+    this.validAuthIds.add(requestPeer.authId)
+    this.peers.set(requestPeer.id, requestPeer)
+
+    // //Add peer to guest list
+    // await this.room.addGuest(requestPeer.authId)
+
+    //Notify to peer get accepted
+    requestPeer.socket.emit("requestAccepted", this.toJson(requestPeer))
+
+    //Create consumers for existing Producers
+    for (const joinedPeer of this.getJoinedPeers(requestPeer.id)) {
+      for (const producer of joinedPeer.producers.values()) {
+        this.createConsumer({
+          consumerPeer: requestPeer,
+          producerPeer: joinedPeer,
+          producer
+        })
+      }
+    }
+
+    //Notify to all host
+    for (const hostSocketId of this.hostSocketIds) {
+      const hostPeer = this.peers.get(hostSocketId);
+      this.notification(hostPeer.socket, "askToJoinPeerLeave", { peerId: requestPeer.id })
+    }
+
+    //Notify new peer to all peers
+    for (const otherPeer of this.getJoinedPeers(requestPeer.id)) {
+      console.log("newpeer")
+      this.notification(
+        otherPeer.socket,
+        'newPeer',
+        requestPeer.getInfo()
+      );
+    }
+  }
+
   async handleSocketRequest(peer, request, cb, serverRequest) {
+    if (this.closed) {
+      cb({ error: "Room is closed" })
+      return;
+    }
+
     if (request.method.startsWith("host:") && (!serverRequest && !peer.isHost)) {
       cb({ error: "You have no permission" })
       return;
@@ -285,6 +342,7 @@ module.exports = class Room {
         break;
       }
 
+      //For valid peers
       case 'join': {
         if (!this.isPeerValid(peer.authId)) {
           cb({ error: "Failed to join" })
@@ -293,18 +351,22 @@ module.exports = class Room {
 
         const { rtpCapabilities } = request.data;
 
+        //Set peer info
         peer.isHost = this.hostId === peer.authId;
         peer.rtpCapabilities = rtpCapabilities;
 
+        //Get current peers in room except joining peer
         const joinedPeers = this.getJoinedPeers()
 
         if (peer.isHost) {
           this.hostSocketIds.add(peer.id);
         }
 
+        //Join socket room
         peer.socket.join(this.id)
         this.peers.set(peer.id, peer);
 
+        //Return room info
         cb(this.toJson(peer));
 
         //Create consumers for existing Producers
@@ -330,18 +392,30 @@ module.exports = class Room {
         break;
       }
 
+      //Invalid peer ask to join the room
       case 'askToJoin': {
-        if (this.invitedIds.has(peer.authId) || this.hostId === peer.authId) {
+        if (this.isPrivate) {
+          cb({ error: "The room is private." })
+          return;
+        }
+
+        if (this.validAuthIds.has(peer.authId) || this.hostId === peer.authId) {
           cb({ error: "You are already valid" })
           throw new Error("You are already valid")
+        }
+
+        if (this.requestPeers.has(peer.authId)) {
+          cb();
+          return;
         }
 
         const { rtpCapabilities } = request.data;
 
         peer.rtpCapabilities = rtpCapabilities;
 
-        this.requestPeers.set(peer.id, peer);
+        this.requestPeers.set(peer.authId, peer);
 
+        //Notify to all host
         for (const hostSocketId of this.hostSocketIds) {
           const hostPeer = this.peers.get(hostSocketId)
           this.notification(hostPeer.socket, "askToJoin", peer.getInfo())
@@ -352,50 +426,56 @@ module.exports = class Room {
         break;
       }
 
-      case 'acceptPeer': {
-        const { peerId } = request.data
+      //Host accept a peer
+      case 'host:acceptPeer': {
+        const { peerAuthId } = request.data
 
-        const requestPeer = this.requestPeers.get(peerId)
+        const requestPeer = this.requestPeers.get(peerAuthId)
 
         if (!requestPeer) {
-          cb({ error: "Peer did not request" })
-          throw new Error("Peer did not request")
+          cb({ error: "Request peer not found!" })
+          throw new Error("Request peer not found!")
         }
 
         cb();
 
-        this.requestPeers.delete(peerId)
-        this.invitedIds.add(requestPeer.authId)
-        this.peers.set(peerId, requestPeer)
+        this.acceptPeer(requestPeer);
 
-        //Notify accepted peer
-        await this.request(requestPeer.socket, "acceptedPeer", this.toJson(requestPeer))
+        // this.requestPeers.delete(peerId)
+        // this.validAuthIds.add(requestPeer.authId)
+        // this.peers.set(peerId, requestPeer)
 
-        //Create consumers for existing Producers
-        for (const joinedPeer of this.getJoinedPeers(peerId)) {
-          for (const producer of joinedPeer.producers.values()) {
-            this.createConsumer({
-              consumerPeer: requestPeer,
-              producerPeer: joinedPeer,
-              producer
-            })
-          }
-        }
+        // //Add peer to guest list
+        // await this.room.addGuest(requestPeer.authId)
 
-        //Notify to all host
-        for (const hostSocketId of this.hostSocketIds) {
-          const hostPeer = this.peers.get(hostSocketId);
-          this.notification(hostPeer.socket, "askToJoinPeerLeave", { peerId })
-        }
+        // //Notify to peer get accepted
+        // await this.request(requestPeer.socket, "acceptedPeer", this.toJson(requestPeer))
 
-        //Notify new peer to all peers
-        for (const otherPeer of this.getJoinedPeers(requestPeer.id)) {
-          this.notification(
-            otherPeer.socket,
-            'newPeer',
-            requestPeer.getInfo()
-          );
-        }
+        // //Create consumers for existing Producers
+        // for (const joinedPeer of this.getJoinedPeers(peerId)) {
+        //   for (const producer of joinedPeer.producers.values()) {
+        //     this.createConsumer({
+        //       consumerPeer: requestPeer,
+        //       producerPeer: joinedPeer,
+        //       producer
+        //     })
+        //   }
+        // }
+
+        // //Notify to all host
+        // for (const hostSocketId of this.hostSocketIds) {
+        //   const hostPeer = this.peers.get(hostSocketId);
+        //   this.notification(hostPeer.socket, "askToJoinPeerLeave", { peerId })
+        // }
+
+        // //Notify new peer to all peers
+        // for (const otherPeer of this.getJoinedPeers(requestPeer.id)) {
+        //   this.notification(
+        //     otherPeer.socket,
+        //     'newPeer',
+        //     requestPeer.getInfo()
+        //   );
+        // }
 
         break;
       }
@@ -414,17 +494,12 @@ module.exports = class Room {
           }
 
           this.requestPeers.delete(peer.id)
-          this.invitedIds.add(peer.authId)
+          this.validAuthIds.add(peer.authId)
           this.peers.set(peer.id, peer)
 
           //Notify accepted peer
-          this.notification(peer.socket, "acceptedPeer", this.toJson(peer))
-
-          //Notify to all host all peers are accepted
-          for (const hostSocketId of this.hostSocketIds) {
-            const hostPeer = this.peers.get(hostSocketId);
-            this.notification(hostPeer.socket, "askToJoinPeerAllLeave")
-          }
+          peer.socket.emit("requestAccepted", this.toJson(requestPeer))
+          // this.notification(peer.socket, "requestAccepted", this.toJson(peer))
 
           //Notify new peer to all peers
           for (const otherPeer of this.getJoinedPeers(peer.id)) {
@@ -436,34 +511,40 @@ module.exports = class Room {
           }
         }
 
-        cb();
-
-        break;
-      }
-
-      case 'denyPeer': {
-        const { peerId } = request.data
-
-        const peer = this.requestPeers.get(peerId)
-
-        if (!peer) {
-          cb({ error: "Peer did not request" })
-          throw new Error("Peer did not request")
+        //Notify to all host all peers are accepted
+        for (const hostSocketId of this.hostSocketIds) {
+          const hostPeer = this.peers.get(hostSocketId);
+          this.notification(hostPeer.socket, "askToJoinPeerAllLeave")
         }
 
-        this.requestPeers.delete(peerId)
+        cb();
+
+        break;
+      }
+
+      case 'host:denyPeer': {
+        const { peerAuthId } = request.data
+
+        const requestPeer = this.requestPeers.get(peerAuthId)
+
+        if (!requestPeer) {
+          cb({ error: "Request peer not found" })
+          throw new Error("Request peer not found")
+        }
+
+        this.requestPeers.delete(peerAuthId)
 
         //Notify denied peer
-        this.notification(peer.socket, "deniedPeer")
+        this.notification(requestPeer.socket, "requestDenied")
 
         cb();
 
         break;
       }
 
-      case 'denyAllPeers': {
+      case 'host:denyAllPeers': {
         for (const peer of this.requestPeers.values()) {
-          this.notification(peer.socket, "deniedPeer")
+          this.notification(peer.socket, "requestDenied")
         }
 
         this.requestPeers.clear();
@@ -544,22 +625,22 @@ module.exports = class Room {
       case 'produce': {
         let { appData, transportId, kind, rtpParameters } = request.data;
 
-        if (!appData.source || !['mic', 'webcam', 'screen'].includes(appData.source)) {
+        if (!appData.source || !['mic', 'camera', 'screen'].includes(appData.source)) {
           cb({ error: "Invalid producer source" })
           throw new Error('invalid producer source');
         }
 
-        if (appData.source === 'mic' && (!this.allowMicrophone && peer.authId !== this.hostId)) {
+        if (appData.source === 'mic' && (!this.allowMicrophone && !peer.isHost)) {
           cb({ error: "Peer not authorized" })
           throw new Error('peer not authorized');
         }
 
-        if (appData.source === 'webcam' && (!this.allowCamera && peer.authId !== this.hostId)) {
+        if (appData.source === 'camera' && (!this.allowCamera && !peer.isHost)) {
           cb({ error: "Peer not authorized" })
           throw new Error('peer not authorized');
         }
 
-        if (appData.source === 'screen' && (!this.allowScreenShare && peer.authId !== this.hostId)) {
+        if (appData.source === 'screen' && (!this.allowScreenShare && !peer.isHost)) {
           cb({ error: "Peer not authorized" })
           throw new Error('peer not authorized');
         }
@@ -598,7 +679,6 @@ module.exports = class Room {
           this.audioLevelObserver.addProducer({ producerId: producer.id })
             .catch(() => { });
         }
-
 
         break;
       }
@@ -788,7 +868,7 @@ module.exports = class Room {
           return;
         }
 
-        if (!this.allowChat && peer.authId !== this.hostId) {
+        if (!this.allowChat && !peer.isHost) {
           cb({ error: "You have no permission to send chat" })
           throw new Error('No chat permission');
         }
@@ -801,7 +881,7 @@ module.exports = class Room {
         }
 
         for (const otherPeer of this.getJoinedPeers()) {
-          this.notification(otherPeer.socket, "chatMessage", { message, name: peer.name, peerId: peer.id, picture: peer.picture })
+          this.notification(otherPeer.socket, "chatMessage", { message, name: peer.name, peerId: peer.id, picture: peer.picture, timestamp: Date.now() })
         }
 
         break;
@@ -815,7 +895,7 @@ module.exports = class Room {
 
       case 'raiseHand': {
         if (peer.raisedHand) {
-          cb({ error: "Already raised" })
+          cb()
           throw new Error("Already raised")
         }
 
@@ -836,9 +916,10 @@ module.exports = class Room {
 
       case 'lowerHand': {
         if (!peer.raisedHand) {
-          cb({ error: "Not raised" })
+          cb()
           throw new Error("Not raised")
         }
+
         peer.raisedHand = false;
 
         for (const otherPeer of this.getJoinedPeers(peer.id)) {
@@ -856,7 +937,7 @@ module.exports = class Room {
           return;
         }
 
-        if (!this.allowQuestion && peer.authId !== this.hostId) {
+        if (!this.allowQuestion && !peer.isHost) {
           cb({ error: "You have no permission to ask question" })
           throw new Error('No question permission');
         }
@@ -1193,8 +1274,7 @@ module.exports = class Room {
           throw new Error("Peer not found!")
         }
 
-        this.notification(peer.socket, "host:kick");
-
+        this.removePeer(peerId)
 
         cb()
 
@@ -1202,6 +1282,13 @@ module.exports = class Room {
       }
 
       case 'host:turnOnScreenSharing': {
+        if (this.allowScreenShare === true) {
+          cb();
+          return;
+        }
+
+        console.log("turnon")
+
         this.allowScreenShare = true;
 
         await this.room.update({ allowScreenShare: true })
@@ -1215,6 +1302,11 @@ module.exports = class Room {
       }
 
       case 'host:turnOffScreenSharing': {
+        if (this.allowScreenShare === false) {
+          cb();
+          return;
+        }
+
         this.allowScreenShare = false;
 
         await this.room.update({ allowScreenShare: false })
@@ -1229,6 +1321,11 @@ module.exports = class Room {
       }
 
       case 'host:turnOnChat': {
+        if (this.allowChat === true) {
+          cb();
+          return;
+        }
+
         this.allowChat = true;
 
         await this.room.update({ allowChat: true })
@@ -1243,6 +1340,11 @@ module.exports = class Room {
       }
 
       case 'host:turnOffChat': {
+        if (this.allowChat === false) {
+          cb();
+          return;
+        }
+
         this.allowChat = false;
 
         await this.room.update({ allowChat: false })
@@ -1256,6 +1358,11 @@ module.exports = class Room {
       }
 
       case 'host:turnOnMicrophone': {
+        if (this.allowMicrophone === true) {
+          cb();
+          return;
+        }
+
         this.allowMicrophone = true;
 
         await this.room.update({ allowMicrophone: true })
@@ -1271,6 +1378,11 @@ module.exports = class Room {
       }
 
       case 'host:turnOffMicrophone': {
+        if (this.allowMicrophone === false) {
+          cb();
+          return;
+        }
+
         this.allowMicrophone = false;
 
         await this.room.update({ allowMicrophone: false })
@@ -1286,6 +1398,11 @@ module.exports = class Room {
       }
 
       case 'host:turnOnVideo': {
+        if (this.allowCamera === true) {
+          cb();
+          return;
+        }
+
         this.allowCamera = true;
 
         await this.room.update({ allowCamera: true })
@@ -1300,6 +1417,11 @@ module.exports = class Room {
       }
 
       case 'host:turnOffVideo': {
+        if (this.allowCamera === false) {
+          cb();
+          return;
+        }
+
         this.allowCamera = false;
 
         await this.room.update({ allowCamera: false })
@@ -1314,6 +1436,11 @@ module.exports = class Room {
       }
 
       case 'host:turnOnQuestion': {
+        if (this.allowQuestion === true) {
+          cb();
+          return;
+        }
+
         this.allowQuestion = true;
 
         await this.room.update({ allowQuestion: true })
@@ -1328,6 +1455,11 @@ module.exports = class Room {
       }
 
       case 'host:turnOffQuestion': {
+        if (this.allowQuestion === false) {
+          cb();
+          return;
+        }
+
         this.allowQuestion = false;
 
         await this.room.update({ allowQuestion: false })
@@ -1339,30 +1471,85 @@ module.exports = class Room {
         break;
       }
 
-      case 'host:turnOffRaisehand': {
-        this.allowRaiseHand = false;
+      case 'host:turnOnRaiseHand': {
+        if (this.allowRaiseHand === true) {
+          cb();
+          return;
+        }
 
-        await this.room.update({ allowRaiseHand: false })
+        this.allowRaiseHand = true;
+        await this.room.update({ allowRaiseHand: true })
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOffRaisehand")
+          this.notification(peer.socket, "host:turnOnRaiseHand")
         }
         cb()
         break;
       }
 
-      case 'host:turnOnRaisehand': {
-        this.allowRaiseHand = true;
-        await this.room.update({ allowRaiseHand: true })
+      case 'host:turnOffRaiseHand': {
+        if (this.allowRaiseHand === false) {
+          cb();
+          return;
+        }
+
+        this.allowRaiseHand = false;
+
+        await this.room.update({ allowRaiseHand: false })
 
         for (const peer of this.getJoinedPeers()) {
-          this.notification(peer.socket, "host:turnOnRaisehand")
+          this.notification(peer.socket, "host:turnOffRaiseHand")
+        }
+        cb()
+        break;
+      }
+
+      case 'host:turnOnPrivate': {
+        if (this.isPrivate === true) {
+          cb();
+          return;
+        }
+
+        console.log("private")
+
+        this.isPrivate = true;
+        await this.room.update({ isPrivate: true })
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOnPrivate")
+        }
+        cb()
+        break;
+      }
+
+      case 'host:turnOffPrivate': {
+        if (this.isPrivate === false) {
+          cb();
+          return;
+        }
+
+        this.isPrivate = false;
+        await this.room.update({ isPrivate: false })
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:turnOffPrivate")
+        }
+        cb()
+        break;
+      }
+
+      case 'host:updateRoomName': {
+        const { name } = request.data;
+
+        for (const peer of this.getJoinedPeers()) {
+          this.notification(peer.socket, "host:updateRoomName", { name })
         }
         cb()
         break;
       }
 
       case 'host:closeRoom': {
+        console.log("host:closeroom")
         this.close();
         cb()
         break;
@@ -1377,43 +1564,45 @@ module.exports = class Room {
   }
 
   removePeer(peerId) {
-    let peer = this.peers?.get(peerId)
+    if (!this.closed) {
+      let peer = this.peers.get(peerId)
 
-    if (this.allPeers)
-      this.allPeers.delete(peerId);
+      if (this.allPeers)
+        this.allPeers.delete(peerId);
 
-    if (peer) {
-      peer.close();
+      if (peer) {
+        peer.close();
 
-      this.peers.delete(peerId);
-      this.hostSocketIds.delete(peerId);
+        this.peers.delete(peerId);
+        this.hostSocketIds.delete(peerId);
 
-      for (const peer of this.peers.values()) {
-        this.notification(peer.socket, "peerLeave", { peerId })
-      }
-      if (this.peers.size === 0) {
-        this.selfDestructCountdown()
-      }
-      return
-    } else {
-      if (this.allPeers && this.allPeers.size === 0) {
-        this.selfDestructCountdown()
-      }
-    }
-
-    peer = this.requestPeers ? this.requestPeers.get(peerId) : null
-
-    if (peer) {
-      peer.close();
-
-      this.requestPeers.delete(peerId);
-
-      for (const hostSocketId of this.hostSocketIds) {
-        const hostPeer = this.peers.get(hostSocketId);
-        this.notification(hostPeer.socket, "askToJoinPeerLeave", { peerId })
+        for (const peer of this.peers.values()) {
+          this.notification(peer.socket, "peerLeave", { peerId })
+        }
+        if (this.peers.size === 0) {
+          this.selfDestructCountdown()
+        }
+        return
+      } else {
+        if (this.allPeers && this.allPeers.size === 0) {
+          this.selfDestructCountdown()
+        }
       }
 
-      return
+      peer = this.requestPeers ? this.requestPeers.get(peerId) : null
+
+      if (peer) {
+        peer.close();
+
+        this.requestPeers.delete(peerId);
+
+        for (const hostSocketId of this.hostSocketIds) {
+          const hostPeer = this.peers.get(hostSocketId);
+          this.notification(hostPeer.socket, "askToJoinPeerLeave", { peerId })
+        }
+
+        return
+      }
     }
   }
 
@@ -1426,7 +1615,7 @@ module.exports = class Room {
   }
 
   selfDestructCountdown() {
-    console.log("selfDestructCountdown() started")
+    console.log("selfDestructCountdown() started", { roomId: this.room.id })
 
     if (this.selfDestructTimeout) {
       clearTimeout(this.selfDestructTimeout)
@@ -1436,15 +1625,21 @@ module.exports = class Room {
       if (this.closed) return;
 
       if (this.peers.size === 0) {
-        console.log("selfDestructCountdown() completed")
+        console.log("selfDestructCountdown() completed", { roomId: this.room.id })
         this.close();
       } else {
-        console.log("selfDestructCountdown() aborted; room is not empty!")
+        console.log("selfDestructCountdown() aborted; room is not empty!", { roomId: this.room.id })
       }
     }, 300000)
   }
 
   close() {
+    if (this.closed) return;
+
+    if (this.selfDestructTimeout) {
+      clearTimeout(this.selfDestructTimeout)
+    }
+
     for (const peer of [...this.allPeers.values()]) {
       this.notification(peer.socket, "roomClosed")
       peer.close();
@@ -1458,7 +1653,7 @@ module.exports = class Room {
 
     this.hostSocketIds = null;
 
-    this.invitedIds = null;
+    this.validAuthIds = null;
 
     this.requestPeers = null;
 
@@ -1483,13 +1678,14 @@ module.exports = class Room {
       id: this.id,
       name: this.name,
       me: peer.getInfo(),
+      isPrivate: this.isPrivate,
       allowCamera: this.allowCamera,
       allowChat: this.allowChat,
       allowMicrophone: this.allowMicrophone,
       allowScreenShare: this.allowScreenShare,
       allowQuestion: this.allowQuestion,
       allowRaiseHand: this.allowRaiseHand,
-      allowToJoin: this.invitedIds.has(peer.authId) || isHost,
+      allowToJoin: this.validAuthIds.has(peer.authId) || isHost,
       peers,
       requestPeers: isHost ? requestPeers : [],
       isHost

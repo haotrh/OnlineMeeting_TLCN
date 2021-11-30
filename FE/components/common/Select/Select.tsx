@@ -80,7 +80,7 @@ export const Select = ({
           { "text-blue-700": isExpanded }
         )}
       >
-        <div className="flex items-center">
+        <div className="flex items-center font-semibold">
           {Icon && <Icon className="mr-3" size={20} />}
           <div>{options[selectedIndex].label}</div>
         </div>

@@ -3,8 +3,6 @@ const { userService, roomService } = require('../services');
 const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
 const bcrypt = require('bcrypt');
-const _ = require('lodash');
-const db = require("../models")
 
 const getUsers = catchAsync(async (req, res) => {
     const { email, isVerified, limit, offset, excludeUserId } = req.query
@@ -45,7 +43,11 @@ const changePassword = catchAsync(async (req, res) => {
 
     const user = await userService.getUserById(req.user.id, true)
 
-    if (!(await bcrypt.compare(oldPassword, user.password))) {
+    try {
+        if (!(await bcrypt.compare(oldPassword, user.password))) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, 'Wrong password!');
+        }
+    } catch (error) {
         throw new ApiError(httpStatus.UNAUTHORIZED, 'Wrong password!');
     }
     newPassword = await bcrypt.hash(newPassword, 10);

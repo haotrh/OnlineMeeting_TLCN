@@ -12,6 +12,8 @@ import { AudioPeers } from "./PeerAudio/AudioPeers";
 import RightContainer from "./RightContainer/RightContainer";
 import Link from "next/link";
 import Logo from "../../../global/Logo/Logo";
+import { AiFillLock } from "react-icons/ai";
+import { IoLockClosed } from "react-icons/io5";
 
 export type MediaType = "audio" | "video" | "screen";
 
@@ -39,11 +41,12 @@ const JoinedRoom = () => {
               className="flex-1 flex-col flex p-4 overflow-hidden"
             >
               <div className="h-[40px] mb-2 flex justify-between items-center">
-                <div className="flex space-x-3 items-center">
-                  <div className="bg-white p-1.5 rounded-full overflow-hidden shadow-inner flex-shrink-0">
+                <div className="flex items-center">
+                  <div className="bg-white p-1.5 mr-3 rounded-full overflow-hidden shadow-inner flex-shrink-0">
                     <Logo size={32} />
                   </div>
-                  <div className="font-semibold">{roomInfo.name}</div>
+                  <div className="font-semibold mr-1">{roomInfo.name}</div>
+                  <IoLockClosed />
                 </div>
                 <div>
                   <button
@@ -70,6 +73,34 @@ const JoinedRoom = () => {
               {roomInfo.state === "left"
                 ? "You left the meeting"
                 : "The room has been closed"}
+            </h1>
+            <Link href="/app" passHref>
+              <div>
+                <Button className="mt-7 font-semibold text-[16px]">
+                  Return to home
+                </Button>
+              </div>
+            </Link>
+          </div>
+        )}
+        {roomInfo.state === "disconnected" && (
+          <div className="w-full pt-40 flex items-center flex-col">
+            <h1 className="text-2xl text-white font-semibold">
+              You have been disconnected
+            </h1>
+            <Link href="/app" passHref>
+              <div>
+                <Button className="mt-7 font-semibold text-[16px]">
+                  Return to home
+                </Button>
+              </div>
+            </Link>
+          </div>
+        )}
+        {roomInfo.state === "server disconnect" && (
+          <div className="w-full pt-40 flex items-center flex-col">
+            <h1 className="text-2xl text-white font-semibold">
+              You have been kicked by host
             </h1>
             <Link href="/app" passHref>
               <div>

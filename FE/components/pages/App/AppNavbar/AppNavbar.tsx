@@ -13,11 +13,6 @@ export const routes = [
     icon: IoCalendarClear,
     name: "Meeting",
   },
-  {
-    href: "/app/people",
-    icon: MdPeople,
-    name: "People",
-  },
 ];
 
 const AppNavbar = () => {

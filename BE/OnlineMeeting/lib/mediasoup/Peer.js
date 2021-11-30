@@ -80,6 +80,7 @@ module.exports = class Peer {
 
   close() {
     this.transports.forEach((transport) => transport.close());
+    this.socket.disconnect();
   }
 
   getInfo() {

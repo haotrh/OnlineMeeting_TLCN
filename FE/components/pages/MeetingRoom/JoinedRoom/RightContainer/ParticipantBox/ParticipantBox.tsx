@@ -30,13 +30,13 @@ const ParticipantBox = ({ hidden }: ParticipantBoxProps) => {
         peer={info}
         screen={Boolean(screenProducer)}
       />
-      {_.values(peers).map((peer: Peer, index) => (
+      {_.values(peers).map((peer: Peer) => (
         <React.Fragment key={peer.id}>
           <ParticipantInfo
             peer={peer}
             screen={Boolean(peer.screenConsumer)}
-            onWebcam={Boolean(peer.webcamConsumer)}
-            onMic={false}
+            onWebcam={Boolean(peer.cameraConsumer)}
+            onMic={Boolean(peer.micConsumer)}
           />
         </React.Fragment>
       ))}

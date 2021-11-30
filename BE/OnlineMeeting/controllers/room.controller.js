@@ -26,9 +26,9 @@ const update = catchAsync(async (req, res) => {
 
 const deleteRoom = catchAsync(async (req, res) => {
     const user = req.user
-    const room = await roomService.getRoomById(req.params.id)
-    if (user.hasCreatedRoom(room)) {
-        await room.destroy()
+    if (user.hasCreatedRoom(req.params.id)) {
+        await roomService.deleteRoomById(req.params.id)
+        // await room.destroy()
         res.status(httpStatus.NO_CONTENT).send()
         return;
     }

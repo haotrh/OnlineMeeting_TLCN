@@ -1,4 +1,4 @@
-import _, { values } from "lodash";
+import _ from "lodash";
 import { useContext, useState } from "react";
 import { BiCamera, BiMicrophone } from "react-icons/bi";
 import { useAppSelector } from "../../../../../hooks/redux";
@@ -18,7 +18,7 @@ const MediaSettings = ({ onClose }: any) => {
   );
 
   const audioDevices = useAppSelector((selector) => selector.me.audioDevices);
-  const webcams = useAppSelector((selector) => selector.me.webcams);
+  const cameras = useAppSelector((selector) => selector.me.cameras);
 
   const [newAudioDevice, setNewAudioDevice] = useState(null);
   const [newWebcam, setNewWebcam] = useState(null);
@@ -66,9 +66,9 @@ const MediaSettings = ({ onClose }: any) => {
             onChange={(value) => {
               setNewWebcam(value);
             }}
-            options={webcams.map((webcam) => ({
-              label: webcam.label,
-              value: webcam.deviceId,
+            options={cameras.map((camera) => ({
+              label: camera.label,
+              value: camera.deviceId,
             }))}
           />
         </div>

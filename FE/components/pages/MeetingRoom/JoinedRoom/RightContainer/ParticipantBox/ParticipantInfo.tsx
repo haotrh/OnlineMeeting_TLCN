@@ -70,7 +70,7 @@ const ParticipantInfo = ({
         </div>
       </div>
       <div className="flex-1 flex justify-end space-x-4 text-lg items-center text-gray-600">
-        {onMic || peer.isSpeaking ? (
+        {onMic && peer.isSpeaking ? (
           <ParticipantVoice peerId={peer.id} />
         ) : (
           <IoMicOff className="text-gray-400" />

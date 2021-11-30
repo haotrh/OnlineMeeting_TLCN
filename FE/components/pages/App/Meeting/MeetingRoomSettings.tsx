@@ -13,7 +13,7 @@ const SettingOption = ({ name, label, readOnly }: SettingOptionProps) => {
 
   return (
     <div className="flex justify-between items-center">
-      <div className="text-darkblue text-sm font-semibold">{label}</div>
+      <div className="text-darkblue text-sm font-semibold">{label}:</div>
       <Controller
         control={control}
         name={name}
@@ -36,6 +36,13 @@ const MeetingRoomSettings = ({ readOnly }: { readOnly: boolean }) => {
     <div>
       <label className="font-bold block mb-2">Room settings</label>
       <div className="space-y-2 mt-2.5">
+        <div className="p-2 bg-gray-200/70 rounded-md -mx-2">
+          <SettingOption
+            readOnly={readOnly}
+            name="isPrivate"
+            label="Private mode (only guests can access)"
+          />
+        </div>
         <SettingOption
           readOnly={readOnly}
           name="allowCamera"

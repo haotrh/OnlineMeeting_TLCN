@@ -1,3 +1,3 @@
 export const config = {
-  backendUrl: "http://localhost:3001/",
+  backendUrl: "https://52.77.251.127:4000/",
 };

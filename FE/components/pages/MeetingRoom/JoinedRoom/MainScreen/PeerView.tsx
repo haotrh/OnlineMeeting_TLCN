@@ -22,11 +22,11 @@ const PeerView = ({
 
   const consumer = useMemo(() => {
     if (type === "peer") {
-      const webcamConsumer = peer.webcamConsumer
-        ? consumers[peer.webcamConsumer]
+      const cameraConsumer = peer.cameraConsumer
+        ? consumers[peer.cameraConsumer]
         : null;
 
-      return webcamConsumer;
+      return cameraConsumer;
     }
 
     if (type === "screen") {

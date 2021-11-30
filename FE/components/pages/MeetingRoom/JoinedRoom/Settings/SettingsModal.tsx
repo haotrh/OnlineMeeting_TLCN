@@ -63,16 +63,14 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 icon={BiDevices}
               />
             </li>
-            {isHost && (
-              <li>
-                <Tab
-                  label="General"
-                  onClick={() => setCurrentTab("general")}
-                  active={currentTab === "general"}
-                  icon={AiOutlineSetting}
-                />
-              </li>
-            )}
+            <li>
+              <Tab
+                label="Room settings"
+                onClick={() => setCurrentTab("general")}
+                active={currentTab === "general"}
+                icon={AiOutlineSetting}
+              />
+            </li>
           </ul>
         </div>
         <div className="flex-1">

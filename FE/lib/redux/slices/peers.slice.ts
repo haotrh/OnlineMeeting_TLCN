@@ -49,8 +49,8 @@ export const peersSlice = createSlice({
         if (consumerType === "screen") {
           peer.screenConsumer = consumerId;
         }
-        if (consumerType === "webcam") {
-          peer.webcamConsumer = consumerId;
+        if (consumerType === "camera") {
+          peer.cameraConsumer = consumerId;
         }
 
         state[peerId] = peer;
@@ -72,8 +72,8 @@ export const peersSlice = createSlice({
         if (peer.screenConsumer === consumerId) {
           peer.screenConsumer = undefined;
         }
-        if (peer.webcamConsumer === consumerId) {
-          peer.webcamConsumer = undefined;
+        if (peer.cameraConsumer === consumerId) {
+          peer.cameraConsumer = undefined;
         }
 
         state[peerId] = peer;

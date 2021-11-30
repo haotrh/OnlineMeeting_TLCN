@@ -24,6 +24,7 @@ const GeneralSettingsToggleOption = ({
   active,
 }: GeneralSettingsToggleOptionProps) => {
   const [loading, setLoading] = useState(false);
+  const isHost = useAppSelector((selector) => selector.room.isHost);
 
   const handleClick = async () => {
     if (!loading) {
@@ -43,7 +44,11 @@ const GeneralSettingsToggleOption = ({
         <div className="font-medium text-[15px]">{name}</div>
       </div>
       <div>
-        <Switch onClick={handleClick} disabled={loading} active={active} />
+        <Switch
+          onClick={handleClick}
+          disabled={loading || !isHost}
+          active={active}
+        />
       </div>
     </div>
   );
@@ -51,8 +56,10 @@ const GeneralSettingsToggleOption = ({
 
 const GeneralSettings = () => {
   const { socket } = useContext(RoomContext);
+  const isHost = useAppSelector((selector) => selector.room.isHost);
 
   const {
+    isPrivate,
     allowCamera,
     allowChat,
     allowMicrophone,
@@ -61,8 +68,6 @@ const GeneralSettings = () => {
     allowQuestion,
   } = useAppSelector((selector) => selector.room);
 
-  const dispatch = useAppDispatch();
-
   const handleToggleScreenSharing = async () => {
     try {
       if (allowScreenShare) {
@@ -70,7 +75,7 @@ const GeneralSettings = () => {
       } else {
         await socket.request("host:turnOnScreenSharing");
       }
-      dispatch(setRoomAllowScreenshare(!allowScreenShare));
+      // dispatch(setRoomAllowScreenshare(!allowScreenShare));
     } catch (error) {
       console.log(error);
     }
@@ -83,7 +88,7 @@ const GeneralSettings = () => {
       } else {
         await socket.request("host:turnOnChat");
       }
-      dispatch(setRoomAllowChat(!allowChat));
+      // dispatch(setRoomAllowChat(!allowChat));
     } catch (error) {
       console.log(error);
     }
@@ -96,7 +101,7 @@ const GeneralSettings = () => {
       } else {
         await socket.request("host:turnOnMicrophone");
       }
-      dispatch(setRoomAllowMicrophone(!allowMicrophone));
+      // dispatch(setRoomAllowMicrophone(!allowMicrophone));
     } catch (error) {
       console.log(error);
     }
@@ -109,20 +114,20 @@ const GeneralSettings = () => {
       } else {
         await socket.request("host:turnOnVideo");
       }
-      dispatch(setRoomAllowCamera(!allowCamera));
+      // dispatch(setRoomAllowCamera(!allowCamera));
     } catch (error) {
       console.log(error);
     }
   };
 
-  const handleToggleRaisehand = async () => {
+  const handleToggleRaiseHand = async () => {
     try {
       if (allowRaiseHand) {
-        await socket.request("host:turnOffRaisehand");
+        await socket.request("host:turnOffRaiseHand");
       } else {
-        await socket.request("host:turnOnRaisehand");
+        await socket.request("host:turnOnRaiseHand");
       }
-      dispatch(setRoomAllowRaiseHand(!allowRaiseHand));
+      // dispatch(setRoomAllowRaiseHand(!allowRaiseHand));
     } catch (error) {
       console.log(error);
     }
@@ -135,7 +140,20 @@ const GeneralSettings = () => {
       } else {
         await socket.request("host:turnOnQuestion");
       }
-      dispatch(setRoomAllowQuestion(!allowQuestion));
+      // dispatch(setRoomAllowQuestion(!allowQuestion));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleTogglePrivate = async () => {
+    try {
+      if (isPrivate) {
+        await socket.request("host:turnOffPrivate");
+      } else {
+        await socket.request("host:turnOnPrivate");
+      }
+      // dispatch(setRoomAllowQuestion(!allowQuestion));
     } catch (error) {
       console.log(error);
     }
@@ -143,7 +161,19 @@ const GeneralSettings = () => {
 
   return (
     <div className="py-2 px-6 space-y-4 select-none">
-      <div className="text-[13px] mb-7 font-semibold text-gray-500">
+      {!isHost && <div>Host action only!</div>}
+      <div className="p-3 bg-gray-200/40 shadow-md rounded-md -mx-2">
+        <GeneralSettingsToggleOption
+          name="Private mode:"
+          onClick={handleTogglePrivate}
+          active={isPrivate ?? false}
+        />
+        <div className="text-sm mt-2 text-gray-600">
+          If using this mode, only guests and accepted participants can access
+          the room. Others cannot send join request.
+        </div>
+      </div>
+      <div className="text-[13px] mb-7 font-semibold text-blue-700">
         ALLOW PARTICIPANTS
       </div>
       <div className="space-y-4 text-gray-700 font-be">
@@ -174,7 +204,7 @@ const GeneralSettings = () => {
         {/* Raise hand */}
         <GeneralSettingsToggleOption
           name="Raise their hand"
-          onClick={handleToggleRaisehand}
+          onClick={handleToggleRaiseHand}
           active={allowRaiseHand ?? false}
         />
         {/* Question */}

@@ -17,7 +17,7 @@ import { ThreeDotsLoading } from "../../../global/Loading/ThreeDotsLoading";
 export type LobbyState = "NORMAL" | "WAIT" | "REJECT";
 
 const Lobby = () => {
-  const { handleJoinRoom, socket } = useContext(RoomContext);
+  const { handleJoinRoom } = useContext(RoomContext);
 
   const { audioMuted, videoMuted } = useAppSelector(
     (selector) => selector.settings
@@ -25,6 +25,8 @@ const Lobby = () => {
 
   const roomState = useAppSelector((selector) => selector.room.state);
   const roomInfo = useAppSelector((selector) => selector.room);
+
+  console.log(roomInfo);
 
   const dispatch = useAppDispatch();
 
@@ -74,9 +76,7 @@ const Lobby = () => {
                 {roomState === "connecting" && (
                   <>
                     <h2 className="text-[28px] mb-3">Getting ready...</h2>
-                    <div>
-                      You&apos;ll able to join in just a moment
-                    </div>
+                    <div>You&apos;ll able to join in just a moment</div>
                     <div className="flex-center mt-4">
                       <CircularLoading size={36} />
                     </div>
@@ -87,7 +87,7 @@ const Lobby = () => {
                     <h2 className="text-[28px] mb-4">Ready to join?</h2>
                     <div className="mt-3">
                       <Button
-                        className="w-[120px] rounded-full py-3 font-medium font-poppins"
+                        className="w-[120px] rounded-full !py-3 font-medium font-poppins"
                         onClick={handleJoinRoom}
                       >
                         {roomInfo.allowToJoin ? "Join now" : "Ask to join"}
@@ -112,6 +112,31 @@ const Lobby = () => {
                       You can&apos;t join this call
                     </h2>
                     <div>Meeting host denied your request to join</div>
+                  </>
+                )}
+                {roomState === "closed" && (
+                  <>
+                    <h2 className="text-[28px] mb-4">
+                      The room has been closed
+                    </h2>
+                    <div className="text-center">
+                      Host has just closed the room, refresh the page to create
+                      new session
+                    </div>
+                  </>
+                )}
+                {roomState === "disconnected" && (
+                  <>
+                    <h2 className="text-[28px] mb-4">
+                      You have been disconnected
+                    </h2>
+                    <div>Check your internet and reload the page</div>
+                  </>
+                )}
+                {roomState === "server disconnect" && (
+                  <>
+                    <h2 className="text-[28px] mb-4">The room is private</h2>
+                    <div>You are not valid to join the room</div>
                   </>
                 )}
               </div>

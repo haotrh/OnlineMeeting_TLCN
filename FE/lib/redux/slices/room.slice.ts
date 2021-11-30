@@ -1,12 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { PinType, Room, Spotlight } from "../../../types/room.type";
 
-type RoomStateType =
+export type RoomStateType =
   //When initializing connection with socket or after join room and init data
   | "connecting"
   //After "loading" in Lobby or "connecting" in Room
   | "connected"
   | "disconnected"
+  | "server disconnect"
   | "closed"
   | "left"
   //Ask to join denied
@@ -41,6 +42,11 @@ export const roomSlice = createSlice({
       return state;
     },
 
+    setRoomName: (state, action: PayloadAction<{ name: string }>) => {
+      const { name } = action.payload;
+      state.name = name;
+    },
+
     setRoomState: (state, action: PayloadAction<RoomStateType>) => {
       state.state = action.payload;
     },
@@ -61,6 +67,9 @@ export const roomSlice = createSlice({
       state.activeSpeaker = action.payload;
     },
 
+    setRoomPrivate: (state, action: PayloadAction<boolean>) => {
+      state.isPrivate = action.payload;
+    },
     setRoomAllowChat: (state, action: PayloadAction<boolean>) => {
       state.allowChat = action.payload;
     },
@@ -99,12 +108,14 @@ export const {
   setRoomState,
   setSpotlights,
   setPin,
+  setRoomName,
   setRoomAllowCamera,
   setRoomAllowChat,
   setRoomAllowMicrophone,
   setRoomAllowScreenshare,
   setRoomAllowQuestion,
   setRoomAllowRaiseHand,
+  setRoomPrivate,
 } = roomSlice.actions;
 
 export default roomSlice.reducer;

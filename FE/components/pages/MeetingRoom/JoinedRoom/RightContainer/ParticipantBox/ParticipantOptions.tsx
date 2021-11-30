@@ -116,9 +116,9 @@ export const ParticipantOptions = ({
               <ParticipantOptionsButton onClick={handleMute}>
                 Mute
               </ParticipantOptionsButton>
-              {/* Stop webcam */}
+              {/* Stop camera */}
               <ParticipantOptionsButton onClick={handleStopWebcam}>
-                Stop webcam
+                Stop camera
               </ParticipantOptionsButton>
               {/* Stop screenshare */}
               <ParticipantOptionsButton onClick={handleStopScreenshare}>

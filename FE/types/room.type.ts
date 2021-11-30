@@ -3,7 +3,7 @@ import { User } from "./user.type";
 
 export type SpotlightType = "peer" | "screen";
 
-export type ConsumerType = "mic" | "webcam" | "screen";
+export type ConsumerType = "mic" | "camera" | "screen";
 
 export type PinType = "myview" | "myscreen" | "otherpeer" | null;
 
@@ -64,11 +64,11 @@ export interface Peer {
   email: string;
   picture: string;
   id: string;
-  authId: string;
+  authId: number;
   isHost: boolean;
   raisedHand: boolean;
   micConsumer?: string;
-  webcamConsumer?: string;
+  cameraConsumer?: string;
   screenConsumer?: string;
   isSpeaking?: boolean;
 }
@@ -83,6 +83,7 @@ export interface Room {
   allowQuestion?: boolean;
   allowRaiseHand?: boolean;
   allowToJoin?: boolean;
+  isPrivate?: boolean;
   isHost?: boolean;
 }
 
@@ -96,10 +97,12 @@ export interface RoomData {
   allowQuestion: boolean;
   allowRaiseHand: boolean;
   allowToJoin: boolean;
+  isPrivate: boolean;
   guests: User[];
   createdAt: Date;
   updatedAt: Date;
   host: User;
+  hostId: string;
 }
 
 export interface CreateRoom {
@@ -110,5 +113,6 @@ export interface CreateRoom {
   allowScreenShare: boolean;
   allowQuestion: boolean;
   allowRaiseHand: boolean;
+  isPrivate: boolean;
   guests: string[];
 }

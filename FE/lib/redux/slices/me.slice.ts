@@ -11,11 +11,11 @@ export interface MeState {
   canSendMic: boolean;
   canSendWebcam: boolean;
   canShareScreen: boolean;
-  webcamInProgress: boolean;
+  cameraInProgress: boolean;
   audioInProgress: boolean;
   screenShareInProgress: boolean;
   audioDevices: DevicesState[];
-  webcams: DevicesState[];
+  cameras: DevicesState[];
 }
 
 const initialState: MeState = {
@@ -23,11 +23,11 @@ const initialState: MeState = {
   canSendMic: false,
   canSendWebcam: false,
   canShareScreen: false,
-  webcamInProgress: false,
+  cameraInProgress: false,
   audioInProgress: false,
   screenShareInProgress: false,
   audioDevices: [],
-  webcams: [],
+  cameras: [],
 };
 
 export const meSlice = createSlice({
@@ -58,7 +58,7 @@ export const meSlice = createSlice({
     setWebcamInProgress: (state, action: PayloadAction<{ flag: boolean }>) => {
       const { flag } = action.payload;
 
-      state.webcamInProgress = flag;
+      state.cameraInProgress = flag;
     },
 
     setScreenShareInProgress: (
@@ -83,7 +83,7 @@ export const meSlice = createSlice({
     },
 
     setWebcams: (state, action: PayloadAction<DevicesState[]>) => {
-      state.webcams = action.payload;
+      state.cameras = action.payload;
     },
   },
 });

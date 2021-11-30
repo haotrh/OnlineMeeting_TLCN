@@ -38,7 +38,7 @@ const Control = () => {
 
   const raisedHand = useAppSelector((selector) => selector.me.info.raisedHand);
 
-  const { audioInProgress, webcamInProgress, screenShareInProgress } =
+  const { audioInProgress, cameraInProgress, screenShareInProgress } =
     useAppSelector((selector) => selector.me);
 
   const room = useAppSelector((selector) => selector.room);
@@ -77,7 +77,7 @@ const Control = () => {
             content: "Camera",
             singleton: target,
           }}
-          preventClick={webcamInProgress || (!room.allowCamera && !room.isHost)}
+          preventClick={cameraInProgress || (!room.allowCamera && !room.isHost)}
         >
           {!videoMuted ? <IoVideocam /> : <IoVideocamOff />}
         </ControlButton>
@@ -109,9 +109,7 @@ const Control = () => {
         {!room.isHost && (
           <Tooltip content="Leave the room" singleton={target}>
             <button
-              onClick={() => {
-                close();
-              }}
+              onClick={() => close("left")}
               className="bg-red-500 text-white flex-center rounded-full text-xl p-3"
             >
               <RiPhoneFill />
@@ -127,7 +125,7 @@ const Control = () => {
             content={
               <div className="bg-white text-[15px] shadow-md text-gray-600 py-1 rounded-md flex flex-col w-[200px]">
                 <button
-                  onClick={close}
+                  onClick={() => close("left")}
                   className="text-left py-1 px-2.5 hover:bg-gray-100 font-semibold"
                 >
                   Leave the room

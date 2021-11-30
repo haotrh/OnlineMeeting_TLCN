@@ -28,6 +28,7 @@
     "file-loader": "^6.2.0",
     "framer-motion": "^4.1.17",
     "hark": "^1.2.3",
+    "https": "^1.0.0",
     "jsonwebtoken": "^8.5.1",
     "mediasoup-client": "^3.6.42",
     "moment": "^2.29.1",

@@ -15,11 +15,12 @@ import EditMeetingDrawer from "./EditMeetingDrawer";
 
 interface MeetingCardProps {
   room: RoomData;
+  refetch: () => any;
 }
 
 const MAX_GUESTS_SHOW = 5;
 
-const MeetingCard = ({ room }: MeetingCardProps) => {
+const MeetingCard = ({ room, refetch }: MeetingCardProps) => {
   const user = useSession().data?.user;
   const isHost = useMemo(() => {
     return user?.id === room.host.id;
@@ -57,7 +58,10 @@ const MeetingCard = ({ room }: MeetingCardProps) => {
             <Tooltip content={isHost ? "Edit" : "Info"}>
               <div>
                 <Button
-                  onClick={() => setEdit(true)}
+                  onClick={() => {
+                    refetch();
+                    setEdit(true);
+                  }}
                   className="w-10 h-10 flex-center text-lg !p-0 mr-2"
                   base="light-primary"
                 >

@@ -2,16 +2,15 @@ import _ from "lodash";
 import { GetServerSideProps } from "next";
 import { getSession, useSession } from "next-auth/react";
 import { useMemo, useState } from "react";
-import { BiNote } from "react-icons/bi";
 import { BsFilter } from "react-icons/bs";
 import { useQuery } from "react-query";
 import { userApi } from "../../api";
-import { OptionType, Select } from "../../components/common/Select/Select";
+import { Select } from "../../components/common/Select/Select";
 import { ThreeDotsLoading } from "../../components/global/Loading/ThreeDotsLoading";
 import MeetingCard from "../../components/pages/App/Meeting/MeetingCard";
 import NewMeetingButton from "../../components/pages/App/Meeting/NewMeetingButton";
 import AppLayout from "../../layouts/AppLayout";
-import { Room, RoomData } from "../../types/room.type";
+import { RoomData } from "../../types/room.type";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const session = await getSession(context);
@@ -94,7 +93,11 @@ const AppMeetPage = () => {
           ) : (
             <div className="grid grid-cols-[repeat(3,1fr)] auto-rows-[1fr] gap-5 px-10 py-6">
               {filteredRooms.map((room: RoomData) => (
-                <MeetingCard key={room.id} room={room} />
+                <MeetingCard
+                  refetch={rooms.refetch}
+                  key={room.id}
+                  room={room}
+                />
               ))}
             </div>
           )}

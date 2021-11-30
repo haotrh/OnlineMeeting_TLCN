@@ -1,5 +1,7 @@
 const httpStatus = require("http-status")
+const _ = require("lodash")
 const { Op } = require("sequelize")
+const logger = require("../config/logger.config")
 const db = require("../models")
 const ApiError = require("../utils/ApiError")
 const Room = db.room
@@ -48,71 +50,107 @@ const updateRoomById = async (roomId, body) => {
         }, { transaction: t })
         await room.addGuests(guests, { transaction: t })
 
-        const activeRoom = global.roomList.get(roomId)
+    })
 
-        if (activeRoom) {
-            if (data.hasOwnProperty("allowScreenShare")) {
-                if (data.allowScreenShare && !room.allowScreenShare) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnScreenSharing" }, () => { }, true)
-                }
-                if (!data.allowScreenShare && room.allowScreenShare) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffScreenSharing" }, () => { }, true)
-                }
+    const activeRoom = global.roomList.get(roomId)
+
+    //Affect to the current active room
+    if (activeRoom && !activeRoom.closed) {
+
+        if (data.hasOwnProperty("allowScreenShare")) {
+            logger.warn("allowScreenShare", data.allowScreenShare, room.allowScreenShare)
+            if (data.allowScreenShare && !activeRoom.allowScreenShare) {
+                logger.warn("turnonserver")
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOnScreenSharing" }, () => { }, true)
             }
-
-            if (data.hasOwnProperty("allowChat")) {
-                if (data.allowChat && !room.allowChat) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnChat" }, () => { }, true)
-                }
-                if (!data.allowChat && room.allowChat) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffChat" }, () => { }, true)
-                }
-            }
-
-            if (data.hasOwnProperty("allowMicrophone")) {
-                if (data.allowMicrophone && !room.allowMicrophone) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnMicrophone" }, () => { }, true)
-                }
-                if (!data.allowMicrophone && room.allowMicrophone) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffMicrophone" }, () => { }, true)
-                }
-            }
-
-            if (data.hasOwnProperty("allowCamera")) {
-                if (data.allowCamera && !room.allowCamera) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnVideo" }, () => { }, true)
-                }
-                if (!data.allowCamera && room.allowCamera) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffVideo" }, () => { }, true)
-                }
-            }
-
-            if (data.hasOwnProperty("allowQuestion")) {
-                if (data.allowQuestion && !room.allowQuestion) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnQuestion" }, () => { }, true)
-                }
-                if (!data.allowQuestion && room.allowQuestion) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffQuestion" }, () => { }, true)
-                }
-            }
-
-            if (data.hasOwnProperty("allowRaiseHand")) {
-                if (data.allowRaiseHand && !room.allowRaiseHand) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOnRaisehand" }, () => { }, true)
-                }
-                if (!data.allowRaiseHand && room.allowRaiseHand) {
-                    await activeRoom.handleSocketRequest(null, { method: "host:turnOffRaisehand" }, () => { }, true)
-                }
+            if (!data.allowScreenShare && activeRoom.allowScreenShare) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOffScreenSharing" }, () => { }, true)
             }
         }
-    })
+
+        if (data.hasOwnProperty("allowChat")) {
+            if (data.allowChat && !activeRoom.allowChat) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOnChat" }, () => { }, true)
+            }
+            if (!data.allowChat && activeRoom.allowChat) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOffChat" }, () => { }, true)
+            }
+        }
+
+        if (data.hasOwnProperty("allowMicrophone")) {
+            if (data.allowMicrophone && !activeRoom.allowMicrophone) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOnMicrophone" }, () => { }, true)
+            }
+            if (!data.allowMicrophone && activeRoom.allowMicrophone) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOffMicrophone" }, () => { }, true)
+            }
+        }
+
+        if (data.hasOwnProperty("allowCamera")) {
+            if (data.allowCamera && !activeRoom.allowCamera) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOnVideo" }, () => { }, true)
+            }
+            if (!data.allowCamera && activeRoom.allowCamera) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOffVideo" }, () => { }, true)
+            }
+        }
+
+        if (data.hasOwnProperty("allowQuestion")) {
+            if (data.allowQuestion && !activeRoom.allowQuestion) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOnQuestion" }, () => { }, true)
+            }
+            if (!data.allowQuestion && activeRoom.allowQuestion) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOffQuestion" }, () => { }, true)
+            }
+        }
+
+        if (data.hasOwnProperty("allowRaiseHand")) {
+            if (data.allowRaiseHand && !activeRoom.allowRaiseHand) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOnRaiseHand" }, () => { }, true)
+            }
+            if (!data.allowRaiseHand && activeRoom.allowRaiseHand) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOffRaiseHand" }, () => { }, true)
+            }
+        }
+
+        if (data.hasOwnProperty("isPrivate")) {
+            if (data.isPrivate && !activeRoom.isPrivate) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOnPrivate" }, () => { }, true)
+            }
+            if (!data.isPrivate && activeRoom.isPrivate) {
+                await activeRoom.handleSocketRequest(null, { method: "host:turnOffPrivate" }, () => { }, true)
+            }
+        }
+
+        if (!_.isEmpty(guests)) {
+            activeRoom.validAuthIds = new Set(_.merge([...activeRoom.validAuthIds], guests))
+        }
+
+        if (data.hasOwnProperty("name")) {
+            if (data.name !== activeRoom.name) {
+                await activeRoom.handleSocketRequest(null, { method: "host:updateRoomName", data: { name: data.name } }, () => { }, true)
+            }
+        }
+    }
+
+
     await room.reload()
 
     return room
 }
 
-const deleteRoomById = async (userId) => {
-    return Room.destroy({ where: { id: userId } })
+const deleteRoomById = async (roomId) => {
+    await Room.destroy({ where: { id: roomId } })
+    const activeRoom = global.roomList.get(roomId)
+
+    console.log({ roomId, activeRoom })
+
+    if (activeRoom && !activeRoom.closed) {
+        console.log("roomclosedestroy")
+        await activeRoom.handleSocketRequest(null, { method: "host:closeRoom" }, () => { }, true)
+        global.roomList.delete(roomId)
+    }
+
 }
 
 const getRooms = async (userId) => {

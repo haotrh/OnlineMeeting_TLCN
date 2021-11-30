@@ -15,22 +15,22 @@ export const AcceptPeerModal = () => {
 
   const dispatch = useAppDispatch();
 
-  const denyOne = (peerId: string) => {
-    socket.request("denyPeer", { peerId });
+  const denyOne = (peerAuthId: number) => {
+    socket.request("host:denyPeer", { peerAuthId });
   };
 
   const denyAll = () => {
-    socket.request("denyAllPeers");
+    socket.request("host:denyAllPeers");
   };
 
-  const acceptOne = (peerId: string) => {
-    socket.request("acceptPeer", { peerId }).then(() => {
-      dispatch(removeRequestPeer({ peerId }));
+  const acceptOne = (peerAuthId: number) => {
+    socket.request("host:acceptPeer", { peerAuthId }).then(() => {
+      dispatch(removeRequestPeer({ peerAuthId }));
     });
   };
 
   const acceptAll = () => {
-    socket.request("acceptAllPeers").then(() => {
+    socket.request("host:acceptAllPeers").then(() => {
       dispatch(clearRequestPeer());
     });
   };
@@ -63,27 +63,27 @@ export const AcceptPeerModal = () => {
       <div className="flex justify-end text-[13px] space-x-5 text-blue-600 font-be">
         <button
           onClick={() => {
-            if (Object.keys(requestPeers).length === 1) {
-              denyOne(requestPeers[0].id);
+            if (_.size(requestPeers) === 1) {
+              denyOne(parseInt(_.keys(requestPeers)[0]));
             } else {
               denyAll();
             }
           }}
           className="font-semibold hover:text-blue-700 transition-colors"
         >
-          {Object.keys(requestPeers).length === 1 ? "Deny entry" : "Deny all"}
+          {_.size(requestPeers) === 1 ? "Deny entry" : "Deny all"}
         </button>
         <button
           onClick={() => {
-            if (Object.keys(requestPeers).length === 1) {
-              acceptOne(Object.keys(requestPeers)[0]);
+            if (_.size(requestPeers) === 1) {
+              acceptOne(parseInt(_.keys(requestPeers)[0]));
             } else {
               acceptAll();
             }
           }}
           className="font-semibold hover:text-blue-700 transition-colors"
         >
-          {Object.keys(requestPeers).length === 1 ? "Accept" : "Accept all"}
+          {_.size(requestPeers) === 1 ? "Accept" : "Accept all"}
         </button>
       </div>
     </Modal>

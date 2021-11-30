@@ -1,8 +1,7 @@
-import axios from "axios";
 import { GetServerSideProps } from "next";
 import Link from "next/link";
-import urljoin from "url-join";
 import Logo from "../components/global/Logo/Logo";
+import axios from "../lib/serverAxios";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const token = context.query.token;
@@ -14,15 +13,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   }
 
   try {
-    await axios.post(
-      urljoin(process.env.BACKEND_URL as string, "/api/auth/verify-email"),
-      null,
-      {
-        params: {
-          token: token as string,
-        },
-      }
-    );
+    await axios.post("auth/verify-email", null, {
+      params: {
+        token: token as string,
+      },
+    });
     return { props: { verified: true } };
   } catch (error: any) {
     console.log(error?.message);

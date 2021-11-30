@@ -1,21 +1,17 @@
-import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import FacebookProvider from "next-auth/providers/facebook";
-import CredentialsProvider from "next-auth/providers/credentials";
-import axios from "axios";
-import { JwtUtils } from "../../../utils/JwtUtils";
-import urljoin from "url-join";
-import { updateUser } from "../../../api/user.api";
+import axios from "../../../lib/serverAxios";
 import _ from "lodash";
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import FacebookProvider from "next-auth/providers/facebook";
+import GoogleProvider from "next-auth/providers/google";
+import urljoin from "url-join";
+import { JwtUtils } from "../../../utils/JwtUtils";
 
 export const refreshToken = async function (refreshToken: string) {
   try {
-    const response = await axios.post(
-      urljoin(process.env.BACKEND_URL as string, "api/auth/refresh-token"),
-      {
-        refreshToken,
-      }
-    );
+    const response = await axios.post("auth/refresh-token", {
+      refreshToken,
+    });
     const data = response.data;
     return data;
   } catch (err: any) {
@@ -43,13 +39,10 @@ export default NextAuth({
       },
       async authorize(credentials: any, req) {
         try {
-          const res = await axios.post(
-            urljoin(process.env.BACKEND_URL as string, "api/auth/login"),
-            {
-              email: credentials.email,
-              password: credentials.password,
-            }
-          );
+          const res = await axios.post("auth/login", {
+            email: credentials.email,
+            password: credentials.password,
+          });
           const data = res.data;
           return data;
         } catch (err: any) {
@@ -71,17 +64,10 @@ export default NextAuth({
       if (user) {
         if (account?.provider === "google") {
           const { id_token } = account;
-
           try {
-            const response = await axios.post(
-              urljoin(
-                process.env.BACKEND_URL as string,
-                "api/auth/login-google"
-              ),
-              {
-                idToken: id_token,
-              }
-            );
+            const response = await axios.post("auth/login-google", {
+              idToken: id_token,
+            });
 
             const data = response.data;
             token = {
@@ -92,7 +78,7 @@ export default NextAuth({
 
             return token;
           } catch (err: any) {
-            console.log(err?.response.data);
+            console.log(err);
             return null;
           }
         }
@@ -100,15 +86,9 @@ export default NextAuth({
         if (account?.provider === "facebook") {
           const { access_token } = account;
           try {
-            const response = await axios.post(
-              urljoin(
-                process.env.BACKEND_URL as string,
-                "api/auth/login-facebook"
-              ),
-              {
-                accessToken: access_token,
-              }
-            );
+            const response = await axios.post("auth/login-facebook", {
+              accessToken: access_token,
+            });
 
             const data = response.data;
 
@@ -149,13 +129,9 @@ export default NextAuth({
       }
 
       const updatedUser = (
-        await axios.post(
-          urljoin(process.env.BACKEND_URL as string, "api/auth/me"),
-          null,
-          {
-            headers: { Authorization: `Bearer ${token.accessToken}` },
-          }
-        )
+        await axios.post("auth/me", null, {
+          headers: { Authorization: `Bearer ${token.accessToken}` },
+        })
       ).data;
 
       if (!updatedUser) {

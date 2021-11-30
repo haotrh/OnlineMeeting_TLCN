@@ -1,5 +1,5 @@
 import { arrayMoveImmutable } from "array-move";
-import axios from "axios";
+import axios from "../../lib/serverAxios";
 import { Harker } from "hark";
 import _ from "lodash";
 import { Device } from "mediasoup-client";
@@ -57,6 +57,7 @@ import {
   removeRequestPeer,
 } from "../../lib/redux/slices/requestPeers.slice";
 import {
+  RoomStateType,
   setActiveSpeaker,
   setInRoom,
   setPin,
@@ -67,6 +68,8 @@ import {
   setRoomAllowRaiseHand,
   setRoomAllowScreenshare,
   setRoomInfo,
+  setRoomName,
+  setRoomPrivate,
   setRoomState,
   setSpotlights,
 } from "../../lib/redux/slices/room.slice";
@@ -85,7 +88,12 @@ import {
   RoomPermission,
   Spotlight,
 } from "../../types/room.type";
-import { RequestMethod, RoomSocket } from "../../types/socket.type";
+import {
+  NotificationMethod,
+  RequestMethod,
+  RoomSocket,
+  ServerRequestMethod,
+} from "../../types/socket.type";
 import { setPeerVolume } from "../../lib/redux/slices/peerVolumes.slice";
 import urljoin from "url-join";
 import { config } from "../../utils/config";
@@ -99,11 +107,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   if (!session.user.isVerified)
     return { redirect: { destination: "/verify-request", permanent: false } };
 
-  const room = (
-    await axios.get(
-      urljoin(config.backendUrl, `api/rooms/${context.query.roomId}`)
-    )
-  ).data;
+  const room = (await axios.get(`rooms/${context.query.roomId}`)).data;
 
   return { props: { room, token: session.accessToken } };
 };
@@ -140,6 +144,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   //Room
   const room = useAppSelector((selector) => selector.room);
   const isHost = useRef(false);
+  const isClosed = useRef(false);
 
   //Settings
   const settings = useAppSelector((selector) => selector.settings);
@@ -149,7 +154,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   const selectedAudioDevice = useRef<string>("");
 
   //Audio devices
-  const webcams = useRef<{ [deviceId: string]: MediaDeviceInfo }>({});
+  const cameras = useRef<{ [deviceId: string]: MediaDeviceInfo }>({});
   const selectedWebcam = useRef<string>("");
 
   //Dispatch
@@ -175,9 +180,9 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   const micProducerId = useRef("");
 
   //Webcam producer
-  const [webcamProducer, setWebcamProducer] = useState<Producer | null>(null);
-  const webcamProducerRef = useRef<Producer | null>(null);
-  const webcamProducerId = useRef("");
+  const [cameraProducer, setWebcamProducer] = useState<Producer | null>(null);
+  const cameraProducerRef = useRef<Producer | null>(null);
+  const cameraProducerId = useRef("");
 
   //Screen producer
   const [screenProducer, setScreenProducer] = useState<Producer | null>(null);
@@ -476,8 +481,10 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
     }
   };
 
-  const close = (closed?: boolean) => {
-    if (room.state === "closed") return;
+  const close = (roomState?: RoomStateType) => {
+    if (room.state === "closed" || isClosed.current) return;
+
+    isClosed.current = true;
 
     socket.current.close();
 
@@ -485,7 +492,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
     if (recvTransportRef.current) recvTransportRef.current.close();
 
-    dispatch(setRoomState(closed ? "closed" : "left"));
+    roomState && dispatch(setRoomState(roomState));
   };
 
   const updateRoomData = (roomData: any) => {
@@ -579,8 +586,8 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
                   micProducerId.current = producerId;
                 }
 
-                if (appData.source === "webcam") {
-                  webcamProducerId.current = producerId;
+                if (appData.source === "camera") {
+                  cameraProducerId.current = producerId;
                 }
 
                 if (appData.source === "screen") {
@@ -698,6 +705,12 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
           rtpCapabilities: mediasoupDeviceRef.current?.rtpCapabilities,
         });
 
+        socket.current.once("requestAccepted", async (data) => {
+          await initTransport();
+          const roomData = data;
+          await joinRoom(roomData);
+        });
+
         dispatch(setRoomState("requesting"));
       }
     } catch (error) {
@@ -730,7 +743,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   };
 
   const updateWebcams = async () => {
-    webcams.current = {};
+    cameras.current = {};
 
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
@@ -738,13 +751,13 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
       for (const device of devices) {
         if (device.kind !== "videoinput") continue;
 
-        webcams.current[device.deviceId] = device;
+        cameras.current[device.deviceId] = device;
       }
       dispatch(
         setWebcams(
-          _.values(webcams.current).map((webcam) => ({
-            label: webcam.label,
-            deviceId: webcam.deviceId,
+          _.values(cameras.current).map((camera) => ({
+            label: camera.label,
+            deviceId: camera.deviceId,
           }))
         )
       );
@@ -780,10 +793,10 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
       const currentSelectedDevice = selectedWebcam.current;
 
-      if (currentSelectedDevice && webcams.current?.[currentSelectedDevice])
+      if (currentSelectedDevice && cameras.current?.[currentSelectedDevice])
         return currentSelectedDevice;
       else {
-        const tmpWebcams = Object.values(webcams.current);
+        const tmpWebcams = Object.values(cameras.current);
 
         return tmpWebcams[0] ? tmpWebcams[0].deviceId : null;
       }
@@ -932,21 +945,21 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   };
 
   const disableWebcam = async () => {
-    if (!webcamProducerRef.current) return;
+    if (!cameraProducerRef.current) return;
 
     dispatch(setWebcamInProgress({ flag: true }));
 
-    webcamProducerRef.current.close();
+    cameraProducerRef.current.close();
 
     try {
       await socket.current.request("closeProducer", {
-        producerId: webcamProducerId.current,
+        producerId: cameraProducerId.current,
       });
     } catch (error) {
       console.log(error);
     }
 
-    webcamProducerRef.current = null;
+    cameraProducerRef.current = null;
     setWebcamProducer(null);
     dispatch(setVideoMuted(true));
     dispatch(setWebcamInProgress({ flag: false }));
@@ -973,14 +986,14 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
       dispatch(setWebcamInProgress({ flag: true }));
 
       const deviceId = (await getWebcamDeviceId()) as string;
-      const device = webcams.current?.[deviceId];
+      const device = cameras.current?.[deviceId];
 
-      if (!device) throw new Error("no webcam devices");
+      if (!device) throw new Error("no camera devices");
 
       const { resolution, frameRate } = settings;
 
-      if ((restart && webcamProducerRef.current) || start) {
-        if (webcamProducerRef.current) await disableWebcam();
+      if ((restart && cameraProducerRef.current) || start) {
+        if (cameraProducerRef.current) await disableWebcam();
 
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -1000,7 +1013,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
           (await sendTransportRef.current?.produce({
             track,
             codecOptions: { videoGoogleStartBitrate: 1000 },
-            appData: { source: "webcam" },
+            appData: { source: "camera" },
             encodings: [
               {
                 rid: "r0",
@@ -1021,19 +1034,19 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
             ],
           })) ?? null;
 
-        webcamProducerRef.current = producer;
+        cameraProducerRef.current = producer;
         setWebcamProducer(producer);
 
-        webcamProducerRef.current?.on("transportclose", () => {
-          webcamProducerRef.current = null;
+        cameraProducerRef.current?.on("transportclose", () => {
+          cameraProducerRef.current = null;
           setWebcamProducer(null);
         });
 
-        webcamProducerRef.current?.on("trackended", () => {
+        cameraProducerRef.current?.on("trackended", () => {
           disableWebcam();
         });
-      } else if (webcamProducerRef.current) {
-        ({ track } = webcamProducerRef.current);
+      } else if (cameraProducerRef.current) {
+        ({ track } = cameraProducerRef.current);
       }
 
       await updateWebcams();
@@ -1134,6 +1147,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
   useEffect(() => {
     socket.current = io(config.backendUrl, {
+      rejectUnauthorized: false,
       withCredentials: true,
       query: {
         roomId,
@@ -1170,9 +1184,17 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
     socket.current.on("disconnect", (reason) => {
       switch (reason) {
-        case "io client disconnect":
+        case "io client disconnect": {
+          if (!isClosed.current) {
+            close("disconnected");
+          }
+          break;
+        }
+
         case "io server disconnect": {
-          close();
+          if (!isClosed.current) {
+            close("server disconnect");
+          }
           break;
         }
 
@@ -1191,7 +1213,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
     });
 
     return () => {
-      close();
+      close("left");
     };
   }, []);
 
@@ -1199,528 +1221,590 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
     try {
       if (socketConnected) {
         //Listen to server request
-        socket.current.on("request", async (request, cb) => {
-          switch (request.method) {
-            case "newConsumer": {
-              const {
-                peerId,
-                producerId,
-                id,
-                kind,
-                rtpParameters,
-                appData,
-                producerPaused,
-              } = request.data;
-
-              if (recvTransportRef.current) {
-                const consumer = await recvTransportRef.current.consume({
-                  id,
+        socket.current.on(
+          "request",
+          async (request: { method: ServerRequestMethod; data: any }, cb) => {
+            switch (request.method) {
+              case "newConsumer": {
+                const {
+                  peerId,
                   producerId,
+                  id,
                   kind,
                   rtpParameters,
-                  appData: {
-                    ...appData,
-                    peerId,
-                    remotelyPaused: producerPaused,
-                    locallyPaused: false,
-                  },
-                });
+                  appData,
+                  producerPaused,
+                } = request.data;
 
-                consumersRef.current[id] = consumer;
-
-                consumer.on("transportclose", () => {
-                  delete consumersRef.current[id];
-                  setConsumers({ ...consumersRef.current });
-                  dispatch(removePeerConsumer({ consumerId: id, peerId }));
-                });
-
-                if (appData.source === "screen") {
-                  addScreenToSpotlight({
-                    type: "screen",
-                    peerId,
+                if (recvTransportRef.current) {
+                  const consumer = await recvTransportRef.current.consume({
+                    id,
+                    producerId,
+                    kind,
+                    rtpParameters,
+                    appData: {
+                      ...appData,
+                      peerId,
+                      remotelyPaused: producerPaused,
+                      locallyPaused: false,
+                    },
                   });
-                }
 
-                dispatch(setSpeaking({ peerId, flag: !producerPaused }));
+                  consumersRef.current[id] = consumer;
 
-                setConsumers({ ...consumersRef.current });
-                dispatch(
-                  addPeerConsumer({
-                    consumerId: id,
-                    peerId,
-                    consumerType: appData.source,
-                  })
-                );
+                  consumer.on("transportclose", () => {
+                    delete consumersRef.current[id];
+                    setConsumers({ ...consumersRef.current });
+                    dispatch(removePeerConsumer({ consumerId: id, peerId }));
+                  });
 
-                if (kind === "audio") {
-                  consumerHark.current[id] = {
-                    hark: {} as Harker,
-                    volume: 100,
-                  };
-
-                  const stream = new MediaStream();
-
-                  stream.addTrack(consumer.track);
-
-                  if (!stream.getAudioTracks()[0]) {
-                    console.log(
-                      "request.newConsumer | given stream has no audio track"
-                    );
-                    return;
+                  if (appData.source === "screen") {
+                    addScreenToSpotlight({
+                      type: "screen",
+                      peerId,
+                    });
                   }
 
-                  consumerHark.current[id].hark = hark(stream, { play: false });
+                  dispatch(setSpeaking({ peerId, flag: !producerPaused }));
 
-                  consumerHark.current[id].hark.on(
-                    "volume_change",
-                    (volume) => {
-                      volume = Math.round(volume);
+                  setConsumers({ ...consumersRef.current });
+                  dispatch(
+                    addPeerConsumer({
+                      consumerId: id,
+                      peerId,
+                      consumerType: appData.source,
+                    })
+                  );
 
-                      if (
-                        consumerHark.current[id] &&
-                        volume !== consumerHark.current[id].volume
-                      ) {
-                        consumerHark.current[id].volume = volume;
+                  if (kind === "audio") {
+                    consumerHark.current[id] = {
+                      hark: {} as Harker,
+                      volume: 100,
+                    };
 
-                        dispatch(setPeerVolume({ peerId, volume }));
-                      }
+                    const stream = new MediaStream();
+
+                    stream.addTrack(consumer.track);
+
+                    if (!stream.getAudioTracks()[0]) {
+                      console.log(
+                        "request.newConsumer | given stream has no audio track"
+                      );
+                      return;
                     }
+
+                    consumerHark.current[id].hark = hark(stream, {
+                      play: false,
+                    });
+
+                    consumerHark.current[id].hark.on(
+                      "volume_change",
+                      (volume) => {
+                        volume = Math.round(volume);
+
+                        if (
+                          consumerHark.current[id] &&
+                          volume !== consumerHark.current[id].volume
+                        ) {
+                          consumerHark.current[id].volume = volume;
+
+                          dispatch(setPeerVolume({ peerId, volume }));
+                        }
+                      }
+                    );
+                  }
+
+                  cb(null);
+                } else {
+                  console.log("newConsumer: no recv transport");
+                }
+
+                break;
+              }
+
+              default:
+                console.log("unknown request method");
+            }
+          }
+        );
+
+        //Listen to server notification
+        socket.current.on(
+          "notification",
+          async (notification: { method: NotificationMethod; data: any }) => {
+            switch (notification.method) {
+              case "consumerClosed": {
+                const { consumerId } = notification.data;
+
+                if (consumersRef.current) {
+                  const consumer = consumersRef.current[consumerId];
+
+                  if (!consumer) {
+                    console.log("consumerClosed: no consumer");
+
+                    break;
+                  }
+
+                  if (consumer.appData.source === "screen") {
+                    removeScreenSpotlight(consumer.appData.peerId);
+                  }
+
+                  if (!_.isEmpty(consumerHark.current[consumerId])) {
+                    consumerHark.current[consumerId].hark.stop();
+                    delete consumerHark.current[consumerId];
+                  }
+
+                  consumer.close();
+
+                  delete consumersRef.current[consumerId];
+
+                  setConsumers({ ...consumersRef.current });
+
+                  if (consumer.kind === "audio") {
+                    dispatch(
+                      setSpeaking({
+                        peerId: consumer.appData.peerId,
+                        flag: false,
+                      })
+                    );
+                  }
+
+                  dispatch(
+                    removePeerConsumer({
+                      consumerId,
+                      peerId: consumer.appData.peerId,
+                    })
                   );
                 }
 
-                cb(null);
-              } else {
-                console.log("newConsumer: no recv transport");
+                break;
               }
 
-              break;
-            }
-
-            case "acceptedPeer": {
-              console.log(socket.current.id);
-
-              await initTransport();
-
-              const roomData = request.data;
-
-              await joinRoom(roomData);
-
-              cb();
-
-              break;
-            }
-
-            default:
-              console.log("unknown request method");
-          }
-        });
-
-        //Listen to server notification
-        socket.current.on("notification", async (notification) => {
-          switch (notification.method) {
-            case "consumerClosed": {
-              const { consumerId } = notification.data;
-
-              if (consumersRef.current) {
+              case "consumerResumed": {
+                const { consumerId } = notification.data;
                 const consumer = consumersRef.current[consumerId];
 
-                if (!consumer) {
-                  console.log("consumerClosed: no consumer");
+                if (!consumer) break;
 
-                  break;
+                if (consumer.kind === "audio") {
+                  dispatch(
+                    setSpeaking({ peerId: consumer.appData.peerId, flag: true })
+                  );
                 }
 
-                if (consumer.appData.source === "screen") {
-                  removeScreenSpotlight(consumer.appData.peerId);
+                consumer.resume();
+
+                break;
+              }
+
+              case "consumerPaused": {
+                const { consumerId } = notification.data;
+                const consumer = consumersRef.current[consumerId];
+
+                if (!consumer) break;
+
+                if (consumer.kind === "audio") {
+                  dispatch(
+                    setSpeaking({
+                      peerId: consumer.appData.peerId,
+                      flag: false,
+                    })
+                  );
                 }
 
-                if (!_.isEmpty(consumerHark.current[consumerId])) {
-                  consumerHark.current[consumerId].hark.stop();
-                  delete consumerHark.current[consumerId];
-                }
+                consumer.pause();
 
-                consumer.close();
+                break;
+              }
 
-                delete consumersRef.current[consumerId];
+              case "newPeer": {
+                dispatch(addPeer({ peer: notification.data }));
 
-                setConsumers({ ...consumersRef.current });
+                addPeerToSpotlight(notification.data.id);
+                break;
+              }
 
+              case "peerLeave": {
+                removePeerSpotlight(notification.data.peerId);
+
+                dispatch(removePeer({ peerId: notification.data.peerId }));
+                break;
+              }
+
+              case "askToJoin": {
+                dispatch(addRequestPeer({ peer: notification.data }));
+                askToJoinAlert.current &&
+                  (
+                    askToJoinAlert.current.cloneNode(true) as HTMLVideoElement
+                  ).play();
+                break;
+              }
+
+              case "askToJoinPeerLeave": {
                 dispatch(
-                  removePeerConsumer({
-                    consumerId,
-                    peerId: consumer.appData.peerId,
+                  removeRequestPeer({
+                    peerAuthId: notification.data.peerAuthId,
                   })
                 );
+
+                break;
               }
 
-              break;
-            }
+              case "askToJoinPeerAllLeave": {
+                dispatch(clearRequestPeer());
 
-            case "consumerResumed": {
-              const { consumerId } = notification.data;
-              const consumer = consumersRef.current[consumerId];
+                break;
+              }
 
-              if (!consumer) break;
+              case "requestDenied": {
+                dispatch(setRoomState("denied"));
 
-              if (consumer.kind === "audio") {
+                socket.current.disconnect();
+
+                break;
+              }
+
+              case "activeSpeaker": {
+                const { peerId } = notification.data;
+
+                dispatch(setActiveSpeaker(peerId));
+
+                if (peerId && peerId !== socket.current.id) {
+                }
+
+                break;
+              }
+
+              case "chatMessage": {
                 dispatch(
-                  setSpeaking({ peerId: consumer.appData.peerId, flag: true })
+                  addMessage({
+                    ...notification.data,
+                    timestamp: moment(Date.now()).format("HH:mm A"),
+                  })
                 );
+
+                messageAlert.current &&
+                  (
+                    messageAlert.current.cloneNode(true) as HTMLAudioElement
+                  ).play();
+
+                break;
               }
 
-              consumer.resume();
+              case "raisedHand": {
+                const { peerId } = notification.data;
 
-              break;
-            }
+                dispatch(setHand({ peerId, flag: true }));
 
-            case "consumerPaused": {
-              const { consumerId } = notification.data;
-              const consumer = consumersRef.current[consumerId];
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-              if (!consumer) break;
+                break;
+              }
 
-              if (consumer.kind === "audio") {
+              case "lowerHand": {
+                const { peerId } = notification.data;
+
+                dispatch(setHand({ peerId, flag: false }));
+
+                break;
+              }
+
+              case "newQuestion": {
+                const question = notification.data;
+
+                dispatch(addQuestion(question));
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
+
+                break;
+              }
+
+              case "upvoteQuestion": {
+                const { questionId, upvotes, isVoted } = notification.data;
+
                 dispatch(
-                  setSpeaking({ peerId: consumer.appData.peerId, flag: false })
+                  upvoteQuestion({
+                    questionId,
+                    isVoted,
+                    upvotes,
+                  })
                 );
+
+                break;
               }
 
-              consumer.pause();
+              case "deleteQuestion": {
+                const { questionId } = notification.data;
 
-              break;
-            }
+                dispatch(removeQuestion({ questionId }));
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-            case "newPeer": {
-              dispatch(addPeer({ peer: notification.data }));
-
-              addPeerToSpotlight(notification.data.id);
-              break;
-            }
-
-            case "peerLeave": {
-              removePeerSpotlight(notification.data.peerId);
-
-              dispatch(removePeer({ peerId: notification.data.peerId }));
-              break;
-            }
-
-            case "askToJoin": {
-              dispatch(addRequestPeer({ peer: notification.data }));
-              askToJoinAlert.current &&
-                (
-                  askToJoinAlert.current.cloneNode(true) as HTMLVideoElement
-                ).play();
-              break;
-            }
-
-            case "askToJoinPeerLeave": {
-              dispatch(removeRequestPeer({ peerId: notification.data.peerId }));
-
-              break;
-            }
-
-            case "askToJoinPeerAllLeave": {
-              dispatch(clearRequestPeer());
-
-              break;
-            }
-
-            case "deniedPeer": {
-              dispatch(setRoomState("denied"));
-
-              socket.current.disconnect();
-
-              break;
-            }
-
-            case "activeSpeaker": {
-              const { peerId } = notification.data;
-
-              dispatch(setActiveSpeaker(peerId));
-
-              if (peerId && peerId !== socket.current.id) {
+                break;
               }
 
-              break;
-            }
+              case "replyQuestion": {
+                const { questionId, reply } = notification.data;
 
-            case "chatMessage": {
-              dispatch(
-                addMessage({
-                  ...notification.data,
-                  timestamp: moment(Date.now()).format("HH:mm A"),
-                })
-              );
+                dispatch(replyQuestion({ questionId, reply }));
 
-              messageAlert.current &&
-                (
-                  messageAlert.current.cloneNode(true) as HTMLAudioElement
-                ).play();
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-              break;
-            }
+                break;
+              }
 
-            case "raisedHand": {
-              const { peerId } = notification.data;
+              case "newPoll": {
+                const newPoll = notification.data;
 
-              dispatch(setHand({ peerId, flag: true }));
+                dispatch(addPoll(newPoll));
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
+                toast("Host has created a new poll");
 
-              break;
-            }
+                break;
+              }
 
-            case "lowerHand": {
-              const { peerId } = notification.data;
+              case "votePoll": {
+                const newPoll = notification.data;
 
-              dispatch(setHand({ peerId, flag: false }));
+                dispatch(addPoll(newPoll));
 
-              break;
-            }
+                break;
+              }
 
-            case "newQuestion": {
-              const question = notification.data;
+              case "roomClosed": {
+                toast("Host closed the room");
+                close("closed");
 
-              dispatch(addQuestion(question));
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
+                break;
+              }
 
-              break;
-            }
+              case "pollClosed": {
+                const { pollId } = notification.data;
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-            case "upvoteQuestion": {
-              const { questionId, upvotes, isVoted } = notification.data;
+                dispatch(closePoll({ pollId }));
 
-              dispatch(
-                upvoteQuestion({
-                  questionId,
-                  isVoted,
-                  upvotes,
-                })
-              );
+                break;
+              }
 
-              break;
-            }
+              case "pollOpened": {
+                const { pollId } = notification.data;
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-            case "deleteQuestion": {
-              const { questionId } = notification.data;
+                dispatch(openPoll({ pollId }));
 
-              dispatch(removeQuestion({ questionId }));
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
+                break;
+              }
 
-              break;
-            }
+              case "deletePoll": {
+                const { pollId } = notification.data;
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-            case "replyQuestion": {
-              const { questionId, reply } = notification.data;
+                dispatch(removePoll({ pollId }));
 
-              dispatch(replyQuestion({ questionId, reply }));
+                break;
+              }
 
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
+              case "host:updateRoomName": {
+                const { name } = notification.data;
 
-              break;
-            }
+                dispatch(setRoomName({ name }));
 
-            case "newPoll": {
-              const newPoll = notification.data;
+                break;
+              }
 
-              dispatch(addPoll(newPoll));
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
+              case "host:mute": {
+                muteMic();
 
-              toast("Host has created a new poll");
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-              break;
-            }
+                toast("You have been muted by the host");
+                break;
+              }
 
-            case "votePoll": {
-              const newPoll = notification.data;
+              case "host:stopVideo": {
+                disableWebcam();
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-              dispatch(addPoll(newPoll));
+                toast("You have been stopped camera by the host");
+                break;
+              }
 
-              break;
-            }
+              case "host:stopScreenSharing": {
+                disableScreenSharing();
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-            case "roomClosed": {
-              toast("Host closed the room");
-              close(true);
+                toast("You have been stopped screensharing by the host");
+                break;
+              }
 
-              break;
-            }
+              case "host:lowerHand": {
+                await socket.current.request("lowerHand");
 
-            case "pollClosed": {
-              const { pollId } = notification.data;
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
+                dispatch(setRaiseHand(false));
 
-              dispatch(closePoll({ pollId }));
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
 
-              break;
-            }
+                toast("You have been lowered hand by the host");
+                break;
+              }
 
-            case "pollOpened": {
-              const { pollId } = notification.data;
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
+              case "host:turnOnScreenSharing": {
+                dispatch(setRoomAllowScreenshare(true));
+                roomPermissions.current.add("SHARE_SCREEN");
+                toast("Host has turned on screen sharing");
+                break;
+              }
 
-              dispatch(openPoll({ pollId }));
+              case "host:turnOffScreenSharing": {
+                !isHost.current && (await disableScreenSharing());
+                dispatch(setRoomAllowScreenshare(false));
+                roomPermissions.current.delete("SHARE_SCREEN");
+                toast("Host has turned off screen sharing");
+                break;
+              }
 
-              break;
-            }
+              case "host:turnOnChat": {
+                dispatch(setRoomAllowChat(true));
+                toast("Host has turned on chat");
+                break;
+              }
+              case "host:turnOffChat": {
+                dispatch(setRoomAllowChat(false));
+                toast("Host has turned off chat");
+                break;
+              }
+              case "host:turnOnMicrophone": {
+                dispatch(setRoomAllowMicrophone(true));
+                roomPermissions.current.add("SHARE_AUDIO");
+                toast("Host has turned on microphone");
+                break;
+              }
+              case "host:turnOffMicrophone": {
+                !isHost.current && (await disableMic());
+                dispatch(setRoomAllowMicrophone(false));
+                roomPermissions.current.delete("SHARE_AUDIO");
+                toast("Host has turned off microphone");
+                break;
+              }
+              case "host:turnOnVideo": {
+                dispatch(setRoomAllowCamera(true));
+                roomPermissions.current.add("SHARE_VIDEO");
+                toast("Host has turned on camera");
+                break;
+              }
+              case "host:turnOffVideo": {
+                !isHost.current && (await disableWebcam());
+                dispatch(setRoomAllowCamera(false));
+                roomPermissions.current.delete("SHARE_VIDEO");
+                toast("Host has turned off camera");
+                break;
+              }
 
-            case "deletePoll": {
-              const { pollId } = notification.data;
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
+              case "host:turnOnQuestion": {
+                dispatch(setRoomAllowQuestion(true));
+                toast("Host has turned on asking question");
+                break;
+              }
 
-              dispatch(removePoll({ pollId }));
+              case "host:turnOffQuestion": {
+                dispatch(setRoomAllowQuestion(false));
+                toast("Host has turned off asking question");
+                break;
+              }
 
-              break;
-            }
+              case "host:turnOnRaiseHand": {
+                dispatch(setRoomAllowRaiseHand(true));
+                toast("Host has turned on raising hand");
+                break;
+              }
 
-            case "host:mute": {
-              muteMic();
+              case "host:turnOffRaiseHand": {
+                await socket.current.request("lowerHand");
+                dispatch(setRoomAllowRaiseHand(false));
+                toast("Host has turned off raising hand");
+                break;
+              }
 
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
+              case "host:turnOnPrivate": {
+                dispatch(setRoomPrivate(true));
+                toast("Host has turned on private mode");
+                break;
+              }
 
-              toast("You have been muted by the host");
-              break;
-            }
+              case "host:turnOffPrivate": {
+                dispatch(setRoomPrivate(false));
+                toast("Host has turned off private mode");
+                break;
+              }
 
-            case "host:stopVideo": {
-              disableWebcam();
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
-
-              toast("You have been stopped webcam by the host");
-              break;
-            }
-
-            case "host:stopScreenSharing": {
-              disableScreenSharing();
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
-
-              toast("You have been stopped screensharing by the host");
-              break;
-            }
-
-            case "host:lowerHand": {
-              await socket.current.request("lowerHand");
-
-              dispatch(setRaiseHand(false));
-
-              notificationSound.current &&
-                (
-                  notificationSound.current.cloneNode(true) as HTMLAudioElement
-                ).play();
-
-              toast("You have been lowered hand by the host");
-              break;
-            }
-
-            case "host:kick": {
-              close();
-              break;
-            }
-
-            case "host:turnOnScreenSharing": {
-              dispatch(setRoomAllowScreenshare(true));
-              roomPermissions.current.add("SHARE_SCREEN");
-              break;
-            }
-
-            case "host:turnOffScreenSharing": {
-              await disableScreenSharing();
-              dispatch(setRoomAllowScreenshare(false));
-              roomPermissions.current.delete("SHARE_SCREEN");
-              break;
-            }
-
-            case "host:turnOnChat": {
-              dispatch(setRoomAllowChat(true));
-              break;
-            }
-            case "host:turnOffChat": {
-              dispatch(setRoomAllowChat(false));
-              break;
-            }
-            case "host:turnOnMicrophone": {
-              dispatch(setRoomAllowMicrophone(true));
-              roomPermissions.current.add("SHARE_AUDIO");
-              break;
-            }
-            case "host:turnOffMicrophone": {
-              await disableMic();
-              dispatch(setRoomAllowMicrophone(false));
-              roomPermissions.current.delete("SHARE_AUDIO");
-              break;
-            }
-            case "host:turnOnVideo": {
-              dispatch(setRoomAllowCamera(true));
-              roomPermissions.current.add("SHARE_VIDEO");
-              break;
-            }
-            case "host:turnOffVideo": {
-              await disableWebcam();
-              dispatch(setRoomAllowCamera(false));
-              roomPermissions.current.delete("SHARE_VIDEO");
-              break;
-            }
-
-            case "host:turnOnQuestion": {
-              dispatch(setRoomAllowQuestion(true));
-              break;
-            }
-
-            case "host:turnOffQuestion": {
-              dispatch(setRoomAllowQuestion(false));
-              break;
-            }
-
-            case "host:turnOnRaisehand": {
-              dispatch(setRoomAllowRaiseHand(true));
-              break;
-            }
-
-            case "host:turnOffRaisehand": {
-              dispatch(setRoomAllowRaiseHand(false));
-              break;
-            }
-
-            default: {
-              console.log("unknown notification", {
-                method: notification.method,
-              });
+              default: {
+                console.log("unknown notification", {
+                  method: notification.method,
+                });
+              }
             }
           }
-        });
+        );
       }
     } catch (error) {
       console.log(error);
@@ -1739,7 +1823,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
         updateWebcam,
         updateMic,
         changeMaxSpotlights,
-        webcamProducer,
+        cameraProducer,
         addPeerToSpotlight,
         updateScreenSharing,
         screenProducer,
