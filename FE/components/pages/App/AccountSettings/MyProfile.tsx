@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { MdEdit } from "react-icons/md";
 import { toast } from "react-toastify";
 import * as yup from "yup";
-import { updateUser } from "../../../../api/user.api";
+import { updateUser } from "../../../../lib/serverApi/user.api";
 import Button from "../../../common/Button/Button";
 import Input from "../../../common/Input/Input";
 import TextArea from "../../../common/Textarea/Textarea";

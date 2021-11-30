@@ -1,5 +1,5 @@
 import _ from "lodash";
-import axios from "../lib/axios";
+import axios from "../axios";
 
 export const getRooms = async (id: string) => {
   await new Promise((res) => setTimeout(res, 200));

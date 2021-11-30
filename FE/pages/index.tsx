@@ -1,6 +1,5 @@
 import React from "react";
 import Companies from "../components/pages/Home/Companies/Companies";
-import Faq from "../components/pages/Home/Faq/Faq";
 import Features from "../components/pages/Home/Features/Features";
 import Hero from "../components/pages/Home/Hero/Hero";
 import WhatCanDo from "../components/pages/Home/WhatCanDo/WhatCanDo";
@@ -13,7 +12,6 @@ const Home = () => {
         <Hero />
         <Features />
         <WhatCanDo />
-        <Faq />
         <Companies />
       </div>
     </PageLayout>

@@ -1,7 +1,7 @@
 import { AiFillWarning } from "react-icons/ai";
 import { MdClose } from "react-icons/md";
 import { useMutation, useQueryClient } from "react-query";
-import { roomApi } from "../../../../api";
+import { roomApi } from "../../../../lib/serverApi";
 import Button from "../../../common/Button/Button";
 import Modal from "../../../common/Modal/Modal";
 

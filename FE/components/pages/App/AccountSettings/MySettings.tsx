@@ -6,7 +6,7 @@ import { useState } from "react";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
-import { changePassword } from "../../../../api/user.api";
+import { changePassword } from "../../../../lib/serverApi/user.api";
 import { toast } from "react-toastify";
 import { hideEmail } from "../../../../utils/hideEmail";
 import DeleteAccoutModal from "./DeleteAccoutModal";

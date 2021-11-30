@@ -5,7 +5,7 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { AiOutlineSearch } from "react-icons/ai";
 import { MdClose } from "react-icons/md";
 import { useQuery } from "react-query";
-import { searchUsers } from "../../../../api/user.api";
+import { searchUsers } from "../../../../lib/serverApi/user.api";
 import useDebounce from "../../../../hooks/useDebounce";
 import useOnClickOutside from "../../../../hooks/useOnClickOutside";
 import { User } from "../../../../types/user.type";

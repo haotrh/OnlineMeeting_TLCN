@@ -4,7 +4,7 @@ import { getSession, useSession } from "next-auth/react";
 import { useMemo, useState } from "react";
 import { BsFilter } from "react-icons/bs";
 import { useQuery } from "react-query";
-import { userApi } from "../../api";
+import { userApi } from "../../lib/serverApi";
 import { Select } from "../../components/common/Select/Select";
 import { ThreeDotsLoading } from "../../components/global/Loading/ThreeDotsLoading";
 import MeetingCard from "../../components/pages/App/Meeting/MeetingCard";

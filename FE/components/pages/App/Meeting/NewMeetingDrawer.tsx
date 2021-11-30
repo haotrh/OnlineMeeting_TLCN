@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "react-query";
-import { roomApi } from "../../../../api";
+import { roomApi } from "../../../../lib/serverApi";
 import { AppDrawerProps } from "../AppDrawer/AppDrawer";
 import MeetingDrawer, { MeetingFormData } from "./MeetingDrawer";
 

@@ -13,7 +13,7 @@ import DeleteRoomModal from "./DeleteRoomModal";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { useQueryClient } from "react-query";
-import { roomApi } from "../../../../api";
+import { roomApi } from "../../../../lib/serverApi";
 import { ThreeDotsLoading } from "../../../global/Loading/ThreeDotsLoading";
 import CircularLoading from "../../../global/Loading/CircularLoading";
 

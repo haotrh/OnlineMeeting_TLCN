@@ -2,7 +2,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
 import { MdClose } from "react-icons/md";
 import { toast } from "react-toastify";
-import { deleteAccount } from "../../../../api/user.api";
+import { deleteAccount } from "../../../../lib/serverApi/user.api";
 import Button from "../../../common/Button/Button";
 import Input from "../../../common/Input/Input";
 import Modal from "../../../common/Modal/Modal";
