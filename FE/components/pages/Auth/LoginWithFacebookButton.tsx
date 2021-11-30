@@ -1,6 +1,7 @@
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/dist/client/router";
 import urljoin from "url-join";
+import { config } from "../../../utils/config";
 
 const LoginWithFacebookButton = () => {
   const router = useRouter();
@@ -11,7 +12,7 @@ const LoginWithFacebookButton = () => {
       onClick={() => {
         signIn("facebook", {
           callbackUrl: router.query.redirect
-            ? urljoin("http://localhost:3000", router.query.redirect as string)
+            ? urljoin(config.frontendUrl, router.query.redirect as string)
             : "/app",
         });
       }}

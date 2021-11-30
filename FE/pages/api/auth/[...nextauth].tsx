@@ -152,6 +152,6 @@ export default NextAuth({
     },
   },
   pages: {
-    error: "http://localhost:3000/login",
+    error: urljoin(process.env.FRONTEND_URL as string, "login"),
   },
 });
