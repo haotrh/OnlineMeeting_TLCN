@@ -3,6 +3,7 @@ const { json, urlencoded } = require("express");
 const cors = require("cors");
 const helmet = require('helmet')
 const https = require("https")
+const compression = require("compression")
 const fs = require("fs")
 const path = require("path")
 const mediasoup = require('mediasoup')
@@ -15,19 +16,28 @@ const { jwtStrategy } = require('./config/passport.config');
 const { tokenService, roomService, userService } = require("./services");
 const logger = require("./config/logger.config");
 const Peer = require("./lib/mediasoup/Peer");
-const sequelize = require('./models').sequelize
+const sequelize = require('./models').sequelize;
+const authConfig = require("./config/auth.config");
+const interactiveServer = require("./lib/interactiveServer");
+// const promExporter = require("./lib/promExporter");
 
 //Global variables
 let app;
 let httpsServer;
 let workers = [];
 let nextMediasoupWorkerIdx = 0;
-global.roomList = new Map();
+const roomList = new Map();
 const PORT = process.env.PORT || config.listenPort || 8080;
 
 //Init
 (async () => {
   try {
+    // Open the interactive server.
+    await interactiveServer(roomList);
+    // if (config.prometheus) {
+    //   await promExporter(roomList, config.prometheus);
+    // }
+
     await runMediasoupWorker();
     await runExpressApp();
     await runWebServer();
@@ -50,6 +60,7 @@ async function runMediasoupWorker() {
         rtcMinPort: config.mediasoup.worker.rtcMinPort,
         rtcMaxPort: config.mediasoup.worker.rtcMaxPort,
       });
+      worker.dump
       worker.on("died", () => {
         console.error(
           "mediasoup worker died, exiting in 2 seconds... [pid:%d]",
@@ -73,7 +84,7 @@ async function runExpressApp() {
 
   //set security HTTP headers
   app.use(helmet());
-
+  app.use(compression());
   app.use(urlencoded({ extended: true }));
   app.use(json());
   app.use(express.static(__dirname));
@@ -114,7 +125,7 @@ async function runSequelize() {
 async function runSocketServer() {
   const io = require('socket.io')(httpsServer, {
     cors: {
-      origin: "https://online-meeting-tlcn-nine.vercel.app/",
+      origin: authConfig.siteUrl,
       methods: ["GET", "POST"],
       credentials: true,
     },
@@ -186,7 +197,7 @@ async function runSocketServer() {
         return;
       }
 
-      const room = global.roomList.get(socket.roomId)
+      const room = roomList.get(socket.roomId)
 
       room.removePeer(socket.id);
     })
@@ -203,7 +214,7 @@ const getMediasoupWorker = () => {
 };
 
 const getOrCreateRoom = async ({ roomId, socket }) => {
-  let room = global.roomList.get(roomId)
+  let room = roomList.get(roomId)
 
   if (room && room.closed) {
     room = null;
@@ -225,11 +236,11 @@ const getOrCreateRoom = async ({ roomId, socket }) => {
       socket,
       worker: getMediasoupWorker(),
       roomClose: () => {
-        global.roomList.delete(roomId)
+        roomList.delete(roomId)
       }
     })
 
-    global.roomList.set(room.id, room);
+    roomList.set(room.id, room);
   }
 
   return room

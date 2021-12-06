@@ -32,11 +32,7 @@ export interface Question {
   timestamp: number;
   reply: QuestionReply;
   upvotes: number;
-  user: {
-    displayName: string;
-    profilePic: string;
-    id: string;
-  };
+  user: User;
   isClosed: boolean;
   isVoted: boolean;
 }

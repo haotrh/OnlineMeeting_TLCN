@@ -1,4 +1,4 @@
 export const config = {
-  frontendUrl: "https://online-meeting-tlcn-nine.vercel.app/",
-  backendUrl: "https://52.77.251.127:4000/",
+  frontendUrl: process.env.NEXT_PUBLIC_FRONTEND_URL as string,
+  backendUrl: process.env.NEXT_PUBLIC_BACKEND_URL as string,
 };

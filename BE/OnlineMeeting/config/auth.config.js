@@ -10,5 +10,5 @@ module.exports = {
     googleSecret: process.env.GOOGLE_SECRET,
     facebookId: process.env.FACEBOOK_ID,
     facebookSecret: process.env.FACEBOOK_SECRET,
-    siteUrl: process.env.SITE_URL
+    siteUrl: process.env.NODE_ENV.trim() === 'development' ? "http://localhost:3000/" : process.env.SITE_URL
 }

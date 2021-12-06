@@ -8,4 +8,10 @@ module.exports = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: true,
+  serverRuntimeConfig: {
+
+  },
+  publicRuntimeConfig: {
+    
+  }
 }

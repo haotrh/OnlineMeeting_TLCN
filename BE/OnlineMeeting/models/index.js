@@ -1,27 +1,40 @@
+require('dotenv').config()
 const dbConfig = require("../config/db.config.js");
 
 const Sequelize = require("sequelize");
+
+let sequelizeConfig = {
+  host: dbConfig.HOST,
+  dialect: dbConfig.dialect,
+  operatorsAliases: 0,
+  // ssl: true,
+  // dialectOptions: {
+  //   ssl: {
+  //     require: true, rejectUnauthorized: false
+  //   }
+  // },
+  pool: {
+    max: dbConfig.pool.max,
+    min: dbConfig.pool.min,
+    acquire: dbConfig.pool.acquire,
+    idle: dbConfig.pool.idle
+  }
+};
+
+if (process.env.NODE_ENV.trim() === 'production') {
+  sequelizeConfig.ssl = true,
+    sequelizeConfig.dialectOptions = {
+      ssl: {
+        require: true, rejectUnauthorized: false
+      }
+    }
+}
+
 const sequelize = new Sequelize(
   dbConfig.DB,
   dbConfig.USER,
   dbConfig.PASSWORD,
-  {
-    host: dbConfig.HOST,
-    dialect: dbConfig.dialect,
-    operatorsAliases: 0,
-    ssl: true,
-    dialectOptions: {
-      ssl: {
-        require: true, rejectUnauthorized: false
-      }
-    },
-    pool: {
-      max: dbConfig.pool.max,
-      min: dbConfig.pool.min,
-      acquire: dbConfig.pool.acquire,
-      idle: dbConfig.pool.idle
-    }
-  },
+  sequelizeConfig
 );
 
 const db = {};

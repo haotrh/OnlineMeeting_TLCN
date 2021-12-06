@@ -6,6 +6,7 @@ import FacebookProvider from "next-auth/providers/facebook";
 import GoogleProvider from "next-auth/providers/google";
 import urljoin from "url-join";
 import { JwtUtils } from "../../../utils/JwtUtils";
+import { config } from "../../../utils/config";
 
 export const refreshToken = async function (refreshToken: string) {
   try {
@@ -152,6 +153,6 @@ export default NextAuth({
     },
   },
   pages: {
-    error: urljoin(process.env.FRONTEND_URL as string, "login"),
+    error: urljoin(config.frontendUrl, "login"),
   },
 });

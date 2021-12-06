@@ -19,16 +19,24 @@ const getLocalIp = () => {
 
 module.exports = {
     listenIp: '0.0.0.0',
-    listenPort: 3001,
+    listenPort: 8080,
     sslCrt: './ssl/cert.pem',
     sslKey: './ssl/key.pem',
+
+    prometheus: {
+        deidentify: false, // deidentify IP addresses
+        listen: 'localhost',
+        numeric: false, // show numeric IP addresses
+        port: 8889, // allocated port
+        quiet: false // include fewer labels
+    },
 
     mediasoup: {
         // Worker settings
         numWorkers: Object.keys(os.cpus()).length,
         worker: {
-            rtcMinPort: 10000,
-            rtcMaxPort: 10100,
+            rtcMinPort: 40000,
+            rtcMaxPort: 49999,
             logLevel: 'warn',
             logTags: [
                 'info',
@@ -68,7 +76,7 @@ module.exports = {
             listenIps: [
                 {
                     ip: '0.0.0.0',
-                    announcedIp: getLocalIp() // replace by public IP address
+                    announcedIp: process.env.NODE_ENV === "development" ? getLocalIp() : process.env.SERVER_PUBLIC_IP // replace by public IP address
                 }
             ],
             maxIncomingBitrate: 1500000,

@@ -316,7 +316,6 @@ module.exports = class Room {
 
     //Notify new peer to all peers
     for (const otherPeer of this.getJoinedPeers(requestPeer.id)) {
-      console.log("newpeer")
       this.notification(
         otherPeer.socket,
         'newPeer',
@@ -1287,8 +1286,6 @@ module.exports = class Room {
           return;
         }
 
-        console.log("turnon")
-
         this.allowScreenShare = true;
 
         await this.room.update({ allowScreenShare: true })
@@ -1510,8 +1507,6 @@ module.exports = class Room {
           return;
         }
 
-        console.log("private")
-
         this.isPrivate = true;
         await this.room.update({ isPrivate: true })
 
@@ -1549,7 +1544,6 @@ module.exports = class Room {
       }
 
       case 'host:closeRoom': {
-        console.log("host:closeroom")
         this.close();
         cb()
         break;
