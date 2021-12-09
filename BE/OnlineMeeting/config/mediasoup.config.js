@@ -1,5 +1,6 @@
 const os = require('os')
 const ifaces = os.networkInterfaces()
+require('dotenv').config()
 
 const getLocalIp = () => {
     let localIp = '127.0.0.1'
@@ -17,19 +18,13 @@ const getLocalIp = () => {
     return localIp
 }
 
+console.log(process.env.SERVER_PUBLIC_IP)
+
 module.exports = {
     listenIp: '0.0.0.0',
     listenPort: 8080,
     sslCrt: './ssl/cert.pem',
     sslKey: './ssl/key.pem',
-
-    prometheus: {
-        deidentify: false, // deidentify IP addresses
-        listen: 'localhost',
-        numeric: false, // show numeric IP addresses
-        port: 8889, // allocated port
-        quiet: false // include fewer labels
-    },
 
     mediasoup: {
         // Worker settings
