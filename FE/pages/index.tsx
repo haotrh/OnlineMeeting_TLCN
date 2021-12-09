@@ -2,7 +2,7 @@ import React from "react";
 import Companies from "../components/pages/Home/Companies/Companies";
 import Features from "../components/pages/Home/Features/Features";
 import Hero from "../components/pages/Home/Hero/Hero";
-import Faq from "../components/pages/Home/Faq/Faq";
+import Faq from "../components/pages/Home/FaqSection/Faq";
 import WhatCanDo from "../components/pages/Home/WhatCanDo/WhatCanDo";
 import { PageLayout } from "../layouts/PageLayout";
 
