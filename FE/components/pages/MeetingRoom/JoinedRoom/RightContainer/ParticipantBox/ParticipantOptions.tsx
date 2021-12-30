@@ -1,9 +1,10 @@
 import classNames from "classnames";
-import { ReactNode, useContext, useMemo, useState } from "react";
+import { ReactNode, useContext, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { useAppDispatch, useAppSelector } from "../../../../../../hooks/redux";
+import { useAppSelector } from "../../../../../../hooks/redux";
 import Popover from "../../../../../common/Popover/Popover";
 import { RoomContext } from "../../../../../contexts/RoomContext";
+import SendPrivateMessageModal from "../../PrivateMessageModal/SendPrivateMessageModal";
 
 interface ParticipantOptionsButtonProps {
   onClick: () => any;
@@ -30,13 +31,13 @@ const ParticipantOptionsButton = ({
 export const ParticipantOptions = ({
   onPin,
   screen,
-  isHost,
   isPinned,
   isScreenPinned,
   peer,
   isMe,
 }: any) => {
   const [showMenu, setShowMenu] = useState(false);
+  const [sendPrivateMessage, setSendPrivateMessage] = useState(false);
 
   const { unpinSpotlight, socket } = useContext(RoomContext);
 
@@ -82,6 +83,10 @@ export const ParticipantOptions = ({
     }
   };
 
+  const handleSendPrivateMessage = async () => {
+    setSendPrivateMessage(true);
+  };
+
   return (
     <Popover
       interactive={true}
@@ -91,7 +96,7 @@ export const ParticipantOptions = ({
       content={
         <div
           onClick={() => setShowMenu(false)}
-          className="w-[160px] relative z-50 bg-white shadow-md border rounded-md py-2 text-sm text-gray-700"
+          className="w-[180px] relative z-50 bg-white shadow-md border rounded-md py-2 text-sm text-gray-700"
         >
           {/* Pin participant */}
           <ParticipantOptionsButton
@@ -112,6 +117,15 @@ export const ParticipantOptions = ({
           {/* Host */}
           {meHost && !isMe && (
             <>
+              {/* Send private message */}
+              <ParticipantOptionsButton onClick={handleSendPrivateMessage}>
+                Send private message
+              </ParticipantOptionsButton>
+              <SendPrivateMessageModal
+                isOpen={sendPrivateMessage}
+                onClose={() => setSendPrivateMessage(false)}
+                peerId={peer.id}
+              />
               {/* Mute */}
               <ParticipantOptionsButton onClick={handleMute}>
                 Mute

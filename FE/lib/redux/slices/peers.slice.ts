@@ -80,12 +80,17 @@ export const peersSlice = createSlice({
       }
     },
 
-    removePeer: (state, action: PayloadAction<{ peerId: string }>) => {
+    removePeer: (
+      state,
+      action: PayloadAction<{ peerId: string; isNotify?: boolean }>
+    ) => {
       const peer = state[action.payload.peerId];
+      const isNotify = action.payload.isNotify;
       if (peer) {
-        toast(`${peer.name} left the room`, {
-          toastId: `peerleave${peer.id}`,
-        });
+        if (isNotify)
+          toast(`${peer.name} left the room`, {
+            toastId: `peerleave${peer.id}`,
+          });
 
         delete state[action.payload.peerId];
       }

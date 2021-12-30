@@ -71,7 +71,7 @@ module.exports = {
             listenIps: [
                 {
                     ip: '0.0.0.0',
-                    announcedIp: process.env.NODE_ENV === "development" ? getLocalIp() : process.env.SERVER_PUBLIC_IP // replace by public IP address
+                    announcedIp: process.env.NODE_ENV.trim() === "development" ? getLocalIp() : process.env.SERVER_PUBLIC_IP // replace by public IP address
                 }
             ],
             maxIncomingBitrate: 1500000,

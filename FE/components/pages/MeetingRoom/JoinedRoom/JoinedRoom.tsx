@@ -1,19 +1,19 @@
 import classNames from "classnames";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useState } from "react";
 import { BsArrowBarRight } from "react-icons/bs";
+import { IoLockClosed } from "react-icons/io5";
 import { useAppSelector } from "../../../../hooks/redux";
 import Button from "../../../common/Button/Button";
 import { ThreeDotsLoading } from "../../../global/Loading/ThreeDotsLoading";
+import Logo from "../../../global/Logo/Logo";
 import { AcceptPeerModal } from "./AcceptPeerModal/AcceptPeerModal";
 import Control from "./Control/Control";
 import { MainScreen } from "./MainScreen/MainScreen";
 import { AudioPeers } from "./PeerAudio/AudioPeers";
+import PrivateMessageModal from "./PrivateMessageModal/PrivateMessageModal";
 import RightContainer from "./RightContainer/RightContainer";
-import Link from "next/link";
-import Logo from "../../../global/Logo/Logo";
-import { AiFillLock } from "react-icons/ai";
-import { IoLockClosed } from "react-icons/io5";
 
 export type MediaType = "audio" | "video" | "screen";
 
@@ -24,6 +24,7 @@ const JoinedRoom = () => {
   return (
     <div>
       <AcceptPeerModal />
+      <PrivateMessageModal />
       <AudioPeers />
       <div className="w-screen h-screen flex space-x-4 overflow-hidden font-quicksand bg-[#202124] text-gray-50">
         {roomInfo.state === "connecting" && (

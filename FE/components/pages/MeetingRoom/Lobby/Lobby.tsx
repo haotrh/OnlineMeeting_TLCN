@@ -1,10 +1,9 @@
 import classNames from "classnames";
-import _ from "lodash";
-import { Device } from "mediasoup-client";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { IoMic, IoMicOff, IoVideocam, IoVideocamOff } from "react-icons/io5";
 import { useAppDispatch, useAppSelector } from "../../../../hooks/redux";
 import { PageLayout } from "../../../../layouts/PageLayout";
+import { setMediaCapablities } from "../../../../lib/redux/slices/me.slice";
 import {
   setAudioMuted,
   setVideoMuted,
@@ -23,12 +22,68 @@ const Lobby = () => {
     (selector) => selector.settings
   );
 
+  const { canSendMic, canSendWebcam } = useAppSelector(
+    (selector) => selector.me
+  );
+
+  const webcamRef = useRef<HTMLVideoElement>(null);
+  const webcamStream = useRef<MediaStream>();
+
   const roomState = useAppSelector((selector) => selector.room.state);
   const roomInfo = useAppSelector((selector) => selector.room);
 
-  console.log(roomInfo);
-
   const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    (async () => {
+      if (!videoMuted) {
+        try {
+          webcamStream.current = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+          if (webcamRef.current) {
+            webcamRef.current.srcObject = webcamStream.current;
+            dispatch(setMediaCapablities({ canSendWebcam: true }));
+          }
+        } catch {
+          dispatch(setMediaCapablities({ canSendWebcam: false }));
+          dispatch(setVideoMuted(true));
+        }
+      } else {
+        if (webcamStream.current) {
+          webcamStream.current.getTracks().forEach((track) => {
+            track.stop();
+          });
+          webcamStream.current = undefined;
+        }
+      }
+    })();
+  }, [videoMuted]);
+
+  useEffect(() => {
+    return () => {
+      if (webcamStream.current) {
+        webcamStream.current.getTracks().forEach((track) => {
+          track.stop();
+        });
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({
+        audio: true,
+      })
+      .then(() => {
+        dispatch(setMediaCapablities({ canSendMic: true }));
+      })
+      .catch(() => {
+        dispatch(setMediaCapablities({ canSendMic: false }));
+        dispatch(setAudioMuted(true));
+      });
+  }, []);
 
   return (
     <PageLayout noFooter>
@@ -41,11 +96,24 @@ const Lobby = () => {
                   className="bg-[#202124] text-2xl text-gray-50 flex-center
                 shadow-inner flex-grow h-[400px] rounded-xl flex-center relative overflow-hidden"
                 >
-                  Camera is off
+                  {videoMuted ? (
+                    "Camera is off"
+                  ) : (
+                    <video
+                      ref={webcamRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      controls={false}
+                      className=""
+                    />
+                  )}
                 </div>
                 <div className="absolute bottom-0 left-0 w-full flex-center p-4 space-x-3">
-                  <button
+                  <Button
+                    base="custom"
                     onClick={() => dispatch(setAudioMuted(!audioMuted))}
+                    disabled={!canSendMic}
                     className={classNames(
                       "rounded-full w-12 h-12 flex-center text-xl text-white transition-colors",
                       {
@@ -56,9 +124,11 @@ const Lobby = () => {
                     )}
                   >
                     {!audioMuted ? <IoMic /> : <IoMicOff />}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    base="custom"
                     onClick={() => dispatch(setVideoMuted(!videoMuted))}
+                    disabled={!canSendWebcam}
                     className={classNames(
                       "rounded-full w-12 h-12 flex-center text-xl text-white transition-colors",
                       {
@@ -69,7 +139,7 @@ const Lobby = () => {
                     )}
                   >
                     {!videoMuted ? <IoVideocam /> : <IoVideocamOff />}
-                  </button>
+                  </Button>
                 </div>
               </div>
               <div className="w-[448px] flex-center flex-col select-none font-medium">

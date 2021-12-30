@@ -61,6 +61,7 @@ import {
   setActiveSpeaker,
   setInRoom,
   setPin,
+  setPrivateMessage,
   setRoomAllowCamera,
   setRoomAllowChat,
   setRoomAllowMicrophone,
@@ -192,7 +193,7 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
   // const screenConsumersRef = useRef<Consumer[]>([]);
 
   //Spotlights
-  const maxSpotlights = useRef(12);
+  const maxSpotlights = useRef(48);
   const peerList = useRef<string[]>([]);
   const pin = useRef<PinType>(null);
   const currentSpotlights = useRef<Spotlight[]>([]);
@@ -901,11 +902,12 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
       }
 
       await updateAudioDevices();
+      dispatch(setAudioMuted(false));
     } catch (error) {
-      console.log(error);
+      dispatch(setMediaCapablities({ canSendMic: false }));
+      dispatch(setAudioMuted(true));
     }
     dispatch(setAudioInProgress({ flag: false }));
-    dispatch(setAudioMuted(false));
     isSpeaking.current = true;
   };
 
@@ -1051,7 +1053,8 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
 
       await updateWebcams();
     } catch (error) {
-      console.log(error);
+      dispatch(setMediaCapablities({ canSendWebcam: false }));
+      dispatch(setVideoMuted(true));
     }
     dispatch(setWebcamInProgress({ flag: false }));
   };
@@ -1425,9 +1428,14 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
               }
 
               case "peerLeave": {
+                const isNotify = _.isUndefined(notification.data.isNotify)
+                  ? true
+                  : notification.data.isNotify;
                 removePeerSpotlight(notification.data.peerId);
 
-                dispatch(removePeer({ peerId: notification.data.peerId }));
+                dispatch(
+                  removePeer({ peerId: notification.data.peerId, isNotify })
+                );
                 break;
               }
 
@@ -1794,6 +1802,18 @@ const MeetingRoomPage = ({ roomId, token }: any) => {
               case "host:turnOffPrivate": {
                 dispatch(setRoomPrivate(false));
                 toast("Host has turned off private mode");
+                break;
+              }
+
+              case "host:sendPrivateMessage": {
+                dispatch(setPrivateMessage(notification.data.message));
+                toast("Host has sent you a message");
+                notificationSound.current &&
+                  (
+                    notificationSound.current.cloneNode(
+                      true
+                    ) as HTMLAudioElement
+                  ).play();
                 break;
               }
 
