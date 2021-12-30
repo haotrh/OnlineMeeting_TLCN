@@ -78,6 +78,11 @@ module.exports = class Peer {
     this.consumers.delete(consumerId);
   }
 
+  closeConsumers() {
+    this.consumers.forEach(consumer => consumer.close());
+    this.consumers = new Map();
+  }
+
   close() {
     this.transports.forEach((transport) => transport.close());
     this.socket.disconnect();

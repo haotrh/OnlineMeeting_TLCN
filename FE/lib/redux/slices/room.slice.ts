@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { PinType, Room, Spotlight } from "../../../types/room.type";
+import { Peer, PinType, Room, Spotlight } from "../../../types/room.type";
 
 export type RoomStateType =
   //When initializing connection with socket or after join room and init data
@@ -21,6 +21,8 @@ interface RoomState extends Room {
   activeSpeaker: string | null;
   spotlights: Spotlight[];
   pin: PinType;
+  privateMessage: string;
+  allValidPeers: Peer[];
 }
 
 const initialState: RoomState = {
@@ -29,6 +31,8 @@ const initialState: RoomState = {
   pin: null,
   activeSpeaker: null,
   spotlights: [],
+  privateMessage: "",
+  allValidPeers: [],
 };
 
 export const roomSlice = createSlice({
@@ -94,6 +98,10 @@ export const roomSlice = createSlice({
       state.allowRaiseHand = action.payload;
     },
 
+    setPrivateMessage: (state, action: PayloadAction<string>) => {
+      state.privateMessage = action.payload;
+    },
+
     clearRoom: () => {
       return initialState;
     },
@@ -116,6 +124,7 @@ export const {
   setRoomAllowQuestion,
   setRoomAllowRaiseHand,
   setRoomPrivate,
+  setPrivateMessage,
 } = roomSlice.actions;
 
 export default roomSlice.reducer;

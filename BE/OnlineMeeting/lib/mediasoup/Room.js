@@ -6,7 +6,7 @@ const Poll = require('./Poll');
 const _ = require('lodash')
 
 module.exports = class Room {
-  static async create({ roomId, worker, hostId, room }) {
+  static async create({ roomId, worker, hostId, room, mainRoom }) {
     const mediaCodecs = config.mediasoup.router.mediaCodecs;
 
     const router = await worker.createRouter({ mediaCodecs })
@@ -19,12 +19,14 @@ module.exports = class Room {
       });
 
     return new Room({
-      roomId, router, hostId, room, audioLevelObserver
+      roomId, router, hostId, room, audioLevelObserver, mainRoom
     })
   }
 
-  constructor({ roomId, router, worker, hostId, room, audioLevelObserver }) {
+  constructor({ roomId, router, worker, hostId, room, audioLevelObserver, mainRoom }) {
     this.room = room;
+
+    this.mainRoom = mainRoom;
 
     this.router = router;
 
@@ -63,6 +65,9 @@ module.exports = class Room {
     //Joined peers
     //Key = socket id - Value = peer
     this.peers = new Map();
+
+    //Breakout rooms
+    this.breakoutRooms = new Map();
 
     //List of ask to join peers
     //Key = auth id - Value = peer
@@ -324,6 +329,48 @@ module.exports = class Room {
     }
   }
 
+  joinRoom(peer, request, cb) {
+    const { rtpCapabilities } = request.data;
+
+    //Set peer info
+    peer.isHost = this.hostId === peer.authId;
+    peer.rtpCapabilities = rtpCapabilities;
+
+    //Get current peers in room except joining peer
+    const joinedPeers = this.getJoinedPeers()
+
+    if (peer.isHost) {
+      this.hostSocketIds.add(peer.id);
+    }
+
+    //Join socket room
+    peer.socket.join(this.id)
+    this.peers.set(peer.id, peer);
+
+    //Return room info
+    cb(this.toJson(peer));
+
+    //Create consumers for existing Producers
+    for (const joinedPeer of joinedPeers) {
+      for (const producer of joinedPeer.producers.values()) {
+        this.createConsumer({
+          consumerPeer: peer,
+          producerPeer: joinedPeer,
+          producer
+        })
+      }
+    }
+
+    //Notify new peer to all peers
+    for (const otherPeer of this.getJoinedPeers(peer.id)) {
+      this.notification(
+        otherPeer.socket,
+        'newPeer',
+        peer.getInfo()
+      );
+    }
+  }
+
   async handleSocketRequest(peer, request, cb, serverRequest) {
     if (this.closed) {
       cb({ error: "Room is closed" })
@@ -348,46 +395,7 @@ module.exports = class Room {
           throw new Error("Not valid")
         }
 
-        const { rtpCapabilities } = request.data;
-
-        //Set peer info
-        peer.isHost = this.hostId === peer.authId;
-        peer.rtpCapabilities = rtpCapabilities;
-
-        //Get current peers in room except joining peer
-        const joinedPeers = this.getJoinedPeers()
-
-        if (peer.isHost) {
-          this.hostSocketIds.add(peer.id);
-        }
-
-        //Join socket room
-        peer.socket.join(this.id)
-        this.peers.set(peer.id, peer);
-
-        //Return room info
-        cb(this.toJson(peer));
-
-        //Create consumers for existing Producers
-        for (const joinedPeer of joinedPeers) {
-          for (const producer of joinedPeer.producers.values()) {
-            this.createConsumer({
-              consumerPeer: peer,
-              producerPeer: joinedPeer,
-              producer
-            })
-          }
-        }
-
-        //Notify new peer to all peers
-        for (const otherPeer of this.getJoinedPeers(peer.id)) {
-          this.notification(
-            otherPeer.socket,
-            'newPeer',
-            peer.getInfo()
-          );
-        }
-
+        this.joinRoom(peer, request, cb);
         break;
       }
 
@@ -1543,6 +1551,72 @@ module.exports = class Room {
         break;
       }
 
+      case 'host:sendPrivateMessage': {
+        const { peerId, message } = request.data;
+
+        if (!peerId || !message) {
+          cb({ error: "Invalid request" })
+          return;
+        }
+
+        const peer = this.peers.get(peerId)
+
+        if (!peer) {
+          cb({ error: "Peer not found" })
+          return;
+        }
+
+        this.notification(peer.socket, "host:sendPrivateMessage", { message })
+        cb();
+
+        break;
+      }
+
+      case 'host:openAllBreakoutRooms': {
+        /*
+        room: [{roomName:string,participants:[id:string]}]
+        */
+        const { room } = request.data;
+
+        await Promise.all(room.forEach(async (newBreakoutRoom) => {
+          const { roomName, participants } = newBreakoutRoom
+
+          const router = this.router;
+
+          const audioLevelObserver = await router.createAudioLevelObserver(
+            {
+              maxEntries: 1,
+              threshold: -80,
+              interval: 800
+            });
+
+          const breakoutRoomId = _.join([this.id, roomName], "_")
+
+          const breakoutRoom = new Room({
+            roomId: breakoutRoomId,
+            router,
+            hostId: this.hostId,
+            room: this.room,
+            audioLevelObserver,
+            mainRoom: this,
+          })
+
+          this.breakoutRooms.set(breakoutRoomId, breakoutRoom)
+
+          participants.forEach(participantId => {
+            [...this.allPeers.values()].filter(peer => peer.authId === participantId).forEach(peer => {
+              this.movePeerToBreakoutRoom(peer, request, cb, breakoutRoom)
+            })
+          })
+        }))
+
+        break;
+      }
+
+      case 'host:closeAllBreakoutRooms': {
+        break;
+      }
+
       case 'host:closeRoom': {
         this.close();
         cb()
@@ -1557,12 +1631,36 @@ module.exports = class Room {
     }
   }
 
+  movePeerToBreakoutRoom(peer, request, cb, breakoutRoom) {
+    if (!this.closed) {
+      if (!peer || !breakoutRoom) {
+        return;
+      }
+
+      const peerId = peer.id;
+
+      this.peers.delete(peerId);
+      this.hostSocketIds.delete(peerId);
+
+      peer.closeConsumers();
+
+      this.notification(peer.socket, "movingToBreakoutRoom", breakoutRoom.toJson(peer))
+
+      for (const peer of this.peers.values()) {
+        this.notification(peer.socket, "peerLeave", { peerId, isNotify: false })
+      }
+
+      breakoutRoom.joinRoom(peer, request, cb);
+
+      return;
+    }
+  }
+
+  movePeerToMainSession(peerId) { }
+
   removePeer(peerId) {
     if (!this.closed) {
       let peer = this.peers.get(peerId)
-
-      if (this.allPeers)
-        this.allPeers.delete(peerId);
 
       if (peer) {
         peer.close();
@@ -1680,6 +1778,7 @@ module.exports = class Room {
       allowQuestion: this.allowQuestion,
       allowRaiseHand: this.allowRaiseHand,
       allowToJoin: this.validAuthIds.has(peer.authId) || isHost,
+      isBreakoutRoom: this.mainRoom ? true : false,
       peers,
       requestPeers: isHost ? requestPeers : [],
       isHost

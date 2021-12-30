@@ -53,7 +53,8 @@ export type RequestMethod =
   | "host:turnOffRaiseHand"
   | "host:turnOnPrivate"
   | "host:turnOffPrivate"
-  | "host:closeRoom";
+  | "host:closeRoom"
+  | "host:sendPrivateMessage";
 
 export type NotificationMethod =
   | "askToJoinPeerLeave"
@@ -94,6 +95,7 @@ export type NotificationMethod =
   | "host:turnOnPrivate"
   | "host:turnOffPrivate"
   | "host:updateRoomName"
+  | "host:sendPrivateMessage"
   | "peerLeave"
   | "roomClosed"
   | "activeSpeaker"

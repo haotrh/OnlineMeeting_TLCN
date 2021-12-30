@@ -1,10 +1,6 @@
 import { useContext } from "react";
 import {
-  IoHandLeftSharp,
-  IoMic,
-  IoMicOff,
-  IoVideocam,
-  IoVideocamOff,
+  IoHandLeftSharp, IoMicOff, IoVideocamOff
 } from "react-icons/io5";
 import { useAppSelector } from "../../../../../../hooks/redux";
 import { Peer, SpotlightType } from "../../../../../../types/room.type";

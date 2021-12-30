@@ -28,7 +28,7 @@ const initialState: SettingsState = {
   frameRate: 15,
   screenSharingResolution: "veryhigh",
   screenSharingFrameRate: 15,
-  lastN: 12,
+  lastN: 48,
   aspectRatio: 1.777, // 16 : 9
 };
 

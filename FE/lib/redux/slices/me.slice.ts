@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import _ from "lodash";
 import { Peer } from "../../../types/room.type";
 
 interface DevicesState {
@@ -37,14 +38,24 @@ export const meSlice = createSlice({
     setMediaCapablities: (
       state,
       action: PayloadAction<{
-        canSendMic: boolean;
-        canSendWebcam: boolean;
-        canShareScreen: boolean;
+        canSendMic?: boolean;
+        canSendWebcam?: boolean;
+        canShareScreen?: boolean;
       }>
     ) => {
       const { canSendMic, canSendWebcam, canShareScreen } = action.payload;
 
-      state = { ...state, canSendMic, canSendWebcam, canShareScreen };
+      if (!_.isNil(canSendMic)) {
+        state.canSendMic = canSendMic;
+      }
+
+      if (!_.isNil(canSendWebcam)) {
+        state.canSendWebcam = canSendWebcam;
+      }
+
+      if (!_.isNil(canShareScreen)) {
+        state.canShareScreen = canShareScreen;
+      }
 
       return state;
     },

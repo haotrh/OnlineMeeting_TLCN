@@ -1,6 +1,7 @@
 import { useSingleton } from "@tippyjs/react";
 import React, { useContext, useState } from "react";
 import {
+  IoGrid,
   IoHandLeftOutline,
   IoHandLeftSharp,
   IoMic,
@@ -15,6 +16,7 @@ import { setRaiseHand } from "../../../../../lib/redux/slices/me.slice";
 import Popover from "../../../../common/Popover/Popover";
 import Tooltip from "../../../../common/Tooltip/Tooltip";
 import { RoomContext } from "../../../../contexts/RoomContext";
+import { BreakoutRoomsButton } from "../BreakoutRooms/BreakoutRoomsButton";
 import { SettingsButton } from "../Settings/SettingsButton";
 import ControlButton from "./ControlButton";
 
@@ -38,8 +40,14 @@ const Control = () => {
 
   const raisedHand = useAppSelector((selector) => selector.me.info.raisedHand);
 
-  const { audioInProgress, cameraInProgress, screenShareInProgress } =
-    useAppSelector((selector) => selector.me);
+  const {
+    audioInProgress,
+    cameraInProgress,
+    screenShareInProgress,
+    canSendMic,
+    canSendWebcam,
+    canShareScreen,
+  } = useAppSelector((selector) => selector.me);
 
   const room = useAppSelector((selector) => selector.room);
 
@@ -74,10 +82,14 @@ const Control = () => {
           }}
           on={!videoMuted}
           tooltip={{
-            content: "Camera",
+            content: canSendWebcam ? "Camera" : "No access to camera",
             singleton: target,
           }}
-          preventClick={cameraInProgress || (!room.allowCamera && !room.isHost)}
+          preventClick={
+            cameraInProgress ||
+            !canSendWebcam ||
+            (!room.allowCamera && !room.isHost)
+          }
         >
           {!videoMuted ? <IoVideocam /> : <IoVideocamOff />}
         </ControlButton>
@@ -88,11 +100,13 @@ const Control = () => {
           }}
           on={!audioMuted}
           tooltip={{
-            content: "Microphone",
+            content: canSendWebcam ? "Microphone" : "No access to microphone",
             singleton: target,
           }}
           preventClick={
-            audioInProgress || (!room.allowMicrophone && !room.isHost)
+            audioInProgress ||
+            !canSendMic ||
+            (!room.allowMicrophone && !room.isHost)
           }
         >
           {!audioMuted ? <IoMic /> : <IoMicOff />}
@@ -154,15 +168,21 @@ const Control = () => {
           }}
           on={isScreenSharing}
           preventClick={
-            screenShareInProgress || (!room.allowScreenShare && !room.isHost)
+            screenShareInProgress ||
+            !canShareScreen ||
+            (!room.allowScreenShare && !room.isHost)
           }
           tooltip={{
-            content: "Screen share",
+            content: canShareScreen
+              ? "Screen share"
+              : "Unable to sharing screen",
             singleton: target,
           }}
         >
           <MdStopScreenShare size={20} />
         </ControlButton>
+        {/* In development */}
+        {/* <BreakoutRoomsButton /> */}
         <SettingsButton />
       </div>
     </div>
